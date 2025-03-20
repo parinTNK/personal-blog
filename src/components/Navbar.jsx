@@ -22,7 +22,7 @@ function Navbar() {
         <div className="sm:hidden">
           <Popover>
             <PopoverTrigger asChild>
-              <button className="text-xl">
+              <button className="text-3xl">
                 ☰
               </button>
             </PopoverTrigger>
