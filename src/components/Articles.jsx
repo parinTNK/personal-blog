@@ -14,6 +14,7 @@ function Articles() {
 
   return (
     <div className="container mx-auto py-8">
+      <h3 className="px-4 font-semibold text-2xl">Latest articles</h3>
       {/* Pass setSelectedCategory to ArticleBar */}
       <ArticleBar setSelectedCategory={setSelectedCategory} />
 
