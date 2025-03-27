@@ -1,36 +1,78 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import ArticleBar from "./ui/ArticleBar";
 import CardPost from "./ui/CardPost";
-import { blogPosts } from "@/data/blogPosts"; // Import blog post data
 
 function Articles() {
+  const [blogPosts, setBlogPosts] = useState([]); // State to store fetched posts
   const [selectedCategory, setSelectedCategory] = useState("Highlight");
+  const [loading, setLoading] = useState(true); // State to handle loading
+  const [limit, setLimit] = useState(6);
 
-  // Filter posts based on the selected category
-  const filteredPosts =
-    selectedCategory === "Highlight"
-      ? blogPosts
-      : blogPosts.filter((post) => post.category === selectedCategory);
+  // Fetch blog posts from the API using axios
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setLoading(true); // Set loading to true before fetching
+      try {
+        const response = await axios.get("https://blog-post-project-api.vercel.app/posts", {
+          params: {
+            category: selectedCategory === "Highlight" ? undefined : selectedCategory,
+            limit,
+          },
+        });
+        console.log(response.data.posts);
+        setBlogPosts(response.data.posts);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching blog posts:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, [selectedCategory, limit]); // Refetch posts when selectedCategory or page changes
+
+  useEffect(() => {
+    setLimit(6);
+  },[selectedCategory])
+
 
   return (
     <div className="container mx-auto py-8">
+      <h3 className="px-4 font-semibold text-2xl">Latest articles</h3>
       {/* Pass setSelectedCategory to ArticleBar */}
       <ArticleBar setSelectedCategory={setSelectedCategory} />
 
-      {/* Render filtered posts */}
-      <div className="grid grid-cols-1 md:grid-cols-2  gap-6 mt-6">
-        {filteredPosts.map((post) => (
-          <CardPost
-            key={post.id}
-            title={post.title}
-            description={post.description}
-            category={post.category}
-            image={post.image}
-            link={post.link}
-            author={post.author}
-            date={post.date}
-          />
-        ))}
+      {/* Show loading state */}
+      {loading ? (
+        <p className="text-center mt-6">Loading articles...</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Render filtered posts */}
+          {blogPosts.map((post) => (
+            <CardPost
+              key={post.id}
+              title={post.title}
+              description={post.description}
+              category={post.category}
+              image={post.image}
+              link={post.link}
+              author={post.author}
+              date={post.date}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => setLimit((limit + 6) )}
+          className="px-4 py-2 bg-gray-300 rounded-lg mr-2"
+        >
+          more
+        </button>
+      
       </div>
     </div>
   );

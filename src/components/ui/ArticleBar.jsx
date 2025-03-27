@@ -74,7 +74,7 @@ function SelectArticle({ activeCategory, setActiveCategory, setSelectedCategory 
     <Select
       onValueChange={(value) => {
         setActiveCategory(value);
-        setSelectedCategory(value);
+        setSelectedCategory(value); // Notify parent component about the selected category
       }}
       value={activeCategory}
     >
