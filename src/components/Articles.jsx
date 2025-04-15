@@ -3,6 +3,7 @@ import axios from "axios";
 import ArticleBar from "./ui/ArticleBar";
 import CardPost from "./ui/CardPost";
 
+
 function Articles() {
   const [blogPosts, setBlogPosts] = useState([]); // State to store fetched posts
   const [selectedCategory, setSelectedCategory] = useState("Highlight");
@@ -47,33 +48,36 @@ function Articles() {
       {loading ? (
         <p className="text-center mt-6">Loading articles...</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {/* Render filtered posts */}
-          {blogPosts.map((post) => (
-            <CardPost
-              key={post.id}
-              title={post.title}
-              description={post.description}
-              category={post.category}
-              image={post.image}
-              link={post.link}
-              author={post.author}
-              date={post.date}
-            />
-          ))}
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Render filtered posts */}
+            {blogPosts.map((post) => (
+              <CardPost
+                key={post.id}
+                id={post.id}
+                title={post.title}
+                description={post.description}
+                category={post.category}
+                image={post.image}
+                link={post.link}
+                author={post.author}
+                date={post.date}
+              />
+            ))}
+          </div>
+          
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => setLimit((limit + 6))}
+              className="px-4 py-2 bg-gray-300 rounded-lg mr-2"
+            >
+              View More
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Pagination Controls */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => setLimit((limit + 6) )}
-          className="px-4 py-2 bg-gray-300 rounded-lg mr-2"
-        >
-          more
-        </button>
       
-      </div>
     </div>
   );
 }
