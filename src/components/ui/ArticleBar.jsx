@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
+
 function ArticleBar({ setSelectedCategory }) {
   const [activeCategory, setActiveCategory] = useState("Highlight"); // Default to "Highlight"
 
