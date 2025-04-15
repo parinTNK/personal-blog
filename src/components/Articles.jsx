@@ -3,6 +3,7 @@ import axios from "axios";
 import ArticleBar from "./ui/ArticleBar";
 import CardPost from "./ui/CardPost";
 
+
 function Articles() {
   const [blogPosts, setBlogPosts] = useState([]); // State to store fetched posts
   const [selectedCategory, setSelectedCategory] = useState("Highlight");
@@ -53,6 +54,7 @@ function Articles() {
             {blogPosts.map((post) => (
               <CardPost
                 key={post.id}
+                id={post.id}
                 title={post.title}
                 description={post.description}
                 category={post.category}
