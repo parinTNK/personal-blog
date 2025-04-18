@@ -12,9 +12,9 @@ const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 app.use(cors({
-  origin: NODE_ENV === 'production' ? 'https://personal-blog-ubt0.onrender.com' : '*',
+  origin: NODE_ENV === 'production' ? 'CLIENT_URL' : '*',
 }));
-app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined')); // ใช้ logging ที่เหมาะสมกับ environment
+app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
 
 const prisma = new PrismaClient();
@@ -31,6 +31,6 @@ app.get('/', async (req, res) => {
 
 app.listen(PORT, () => {
   connectToDatabase();
-  console.log(`Server is running on ${NODE_ENV} mode at http://localhost:${PORT}`);
+  console.log(`Server is running on ${NODE_ENV} mode`);
 });
 
