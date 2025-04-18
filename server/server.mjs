@@ -5,24 +5,19 @@ import dotenv from 'dotenv';
 import connectToDatabase from './util/db.mjs';
 import { PrismaClient } from '@prisma/client';
 
-
+dotenv.config();
 
 const app = express();
-dotenv.config();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-app.use(cors());
-app.use(morgan('dev'));
+app.use(cors({
+  origin: NODE_ENV === 'production' ? 'https://personal-blog-ubt0.onrender.com' : '*',
+}));
+app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined')); // ใช้ logging ที่เหมาะสมกับ environment
 app.use(express.json());
 
-
-// app.get('/', (req, res) => {
-//   res.send('Hello World!');
-// }
-// );
-
 const prisma = new PrismaClient();
-
 
 app.get('/', async (req, res) => {
   try {
@@ -36,7 +31,6 @@ app.get('/', async (req, res) => {
 
 app.listen(PORT, () => {
   connectToDatabase();
-  console.log(`Server is running on port ${PORT}`);
-}
-);
+  console.log(`Server is running on ${NODE_ENV} mode at http://localhost:${PORT}`);
+});
 
