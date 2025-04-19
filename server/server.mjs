@@ -6,17 +6,23 @@ import connectToDatabase from './util/db.mjs';
 import { PrismaClient } from '@prisma/client';
 import cookieParser from 'cookie-parser';
 import authRoute from './util/routes/authRoute.mjs';
+import moment from 'moment-timezone';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const PORT = process.env.PORT;
+const NODE_ENV = process.env.NODE_ENV;
 
 app.use(cors({
   origin: NODE_ENV === 'production' ? 'CLIENT_URL' : '*',
 }));
-app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
+
+morgan.token('date', (req, res) => {
+  return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'); // เวลาไทย
+});
+
+app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
 app.use(express.json());
 app.use(cookieParser()); // เพิ่ม middleware สำหรับจัดการ cookie
 
