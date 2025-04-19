@@ -10,13 +10,15 @@ import authRoute from './util/routes/authRoute.mjs';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const PORT = process.env.PORT;
+const NODE_ENV = process.env.NODE_ENV;
 
-app.use(cors());
+app.use(cors({
+  origin: NODE_ENV === 'production' ? 'CLIENT_URL' : '*',
+}));
 app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser()); // เพิ่ม middleware สำหรับจัดการ cookie
 
 const prisma = new PrismaClient();
 
