@@ -13,12 +13,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-app.use(cors({
-  origin: NODE_ENV === 'production' ? 'CLIENT_URL' : '*',
-}));
+app.use(cors());
 app.use(morgan(NODE_ENV === 'development' ? 'dev' : 'combined'));
 app.use(express.json());
-app.use(cookieParser()); // เพิ่ม middleware สำหรับจัดการ cookie
+app.use(cookieParser());
 
 const prisma = new PrismaClient();
 
