@@ -21,7 +21,7 @@ const prisma = new PrismaClient();
 
 app.get('/', async (req, res) => {
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.posts.findMany();
     res.status(200).json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
