@@ -9,9 +9,22 @@ const register = async (req, res) => {
   const { email, password, username, name } = req.body;
 
   try {
-    const existingUser = await prisma.users.findUnique({ where: { email } });
+    const existingUser = await prisma.users.findFirst({
+      where: {
+      OR: [
+        { email },
+        { username },
+      ],
+      },
+    });
+
     if (existingUser) {
+      if (existingUser.email === email) {
       return res.status(400).json({ error: 'Email already exists' });
+      }
+      if (existingUser.username === username) {
+      return res.status(400).json({ error: 'Username already exists' });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -65,4 +78,30 @@ const logout = (req, res) => {
   res.status(200).json({ message: 'Logout successful' });
 };
 
-export { register, login, logout };
+const getCurrentUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        role: true,
+      }
+    });
+
+    if (!user) {
+      res.clearCookie('token');
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    res.status(500).json({ error: 'Failed to fetch user data.' });
+  }
+};
+
+export { register, login, logout, getCurrentUser };
