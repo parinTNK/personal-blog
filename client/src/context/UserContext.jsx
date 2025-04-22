@@ -1,6 +1,11 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
+// ดึง URL จาก environment variables
+const API_BASE_URL = import.meta.env.MODE === 'production'
+  ? import.meta.env.VITE_API_BASE_URL_PROD
+  : import.meta.env.VITE_API_BASE_URL_DEV;
+
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
@@ -14,7 +19,8 @@ export const UserProvider = ({ children }) => {
 
   const logoutUser = async () => {
      try {
-        await axios.post('http://localhost:5000/api/auth/logout', {}, { withCredentials: true });
+        // ใช้ API_BASE_URL ที่ได้จาก env
+        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
         setCurrentUser(null);
      } catch (error) {
         console.error("Error logging out:", error);
@@ -26,7 +32,8 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/auth/me', {
+        // ใช้ API_BASE_URL ที่ได้จาก env
+        const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
           withCredentials: true, // ตรวจสอบว่ามี option นี้แล้ว
         });
         if (response.data && response.data.user) {

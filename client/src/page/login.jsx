@@ -5,6 +5,11 @@ import Navbar from "../components/Navbar";
 import { Toaster, toast } from 'react-hot-toast';
 import { useUser } from "../context/UserContext";
 
+// ดึง URL จาก environment variables
+const API_BASE_URL = import.meta.env.MODE === 'production'
+  ? import.meta.env.VITE_API_BASE_URL_PROD
+  : import.meta.env.VITE_API_BASE_URL_DEV;
+
 function Login() {
     const [formData, setFormData] = useState({
         email: "",
@@ -36,7 +41,7 @@ function Login() {
 
         try {
             const response = await axios.post(
-                "http://localhost:5000/api/auth/login",
+                `${API_BASE_URL}/api/auth/login`, // ใช้ URL จาก env
                 formData,
                 { withCredentials: true } // เพื่อให้ browser รับ cookie จาก server
             );

@@ -4,6 +4,11 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import SignupSuccess from "../components/ui/SingupSuccess.jsx";
 
+// ดึง URL จาก environment variables
+const API_BASE_URL = import.meta.env.MODE === 'production'
+  ? import.meta.env.VITE_API_BASE_URL_PROD
+  : import.meta.env.VITE_API_BASE_URL_DEV;
+
 const validateEmail = (email) => {
   return String(email)
     .toLowerCase()
@@ -63,7 +68,7 @@ function Register() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        `${API_BASE_URL}/api/auth/register`,
         formData
       );
       setSuccess(response.data.message);
