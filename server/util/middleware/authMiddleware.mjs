@@ -1,9 +1,4 @@
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import generateCookie from '../helpers/cookieHelper.mjs';
-
-const prisma = new PrismaClient();
 
 export const authenticateToken = (req, res, next) => {
   const token = req.cookies.token;
@@ -13,12 +8,19 @@ export const authenticateToken = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decodedPayload;
     next();
   } catch (error) {
     console.error("Invalid token:", error.message);
-    res.clearCookie('token');
-    return res.status(403).json({ error: 'Invalid token.' });
+
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+    });
+
+    return res.status(403).json({ error: 'Invalid or expired token.' });
   }
 };

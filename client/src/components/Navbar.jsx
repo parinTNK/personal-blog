@@ -1,11 +1,11 @@
 import React from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '../context/UserContext'; // Import useUser
-import { Button } from './ui/button'; // Import Button if needed for logout
+import { useUser } from '../context/UserContext'; 
+import { Button } from './ui/button'; 
 
 function Navbar() {
-  const { currentUser, logoutUser, loading } = useUser(); // Get user state and logout function
+  const { currentUser, logoutUser, loading } = useUser();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -19,7 +19,7 @@ function Navbar() {
          <Link to="/" className="text-3xl">
            hh.
          </Link>
-         <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div> {/* Placeholder */}
+         <div className="h-8 w-24 bg-gray-200 rounded animate-pulse"></div> 
        </nav>
     );
   }

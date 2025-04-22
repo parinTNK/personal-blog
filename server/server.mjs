@@ -14,9 +14,9 @@ const app = express();
 const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
 
-// เปลี่ยนการตั้งค่า CORS ให้รองรับ credentials
+
 app.use(cors({
-  origin: NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173', // หรือ port ที่ client ของคุณใช้
+  origin: NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173', 
   credentials: true // เพิ่ม credentials: true เพื่อให้รับส่ง cookies ได้
 }));
 
@@ -49,7 +49,7 @@ app.get('/', async (req, res) => {
 
 app.use('/api/auth', authRoute);
 
-app.listen(PORT, async () => {
+app.listen(PORT, async  () => {
   await connectToDatabase();
   console.log(`Server is running on ${NODE_ENV} mode`);
 });
