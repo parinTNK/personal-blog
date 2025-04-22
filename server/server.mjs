@@ -16,16 +16,22 @@ const NODE_ENV = process.env.NODE_ENV;
 
 // --- CORS Configuration ---
 const allowedOrigins = [
-  process.env.CLIENT_URL, // Production URL from .env
+  process.env.CLIENT_URL, // <= ค่าจาก Render Env Var
   'http://localhost:5173' // Development URL (adjust port if needed)
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin OR if origin is in the allowed list
+    // Log ค่า origin ที่ได้รับจริง และค่า process.env.CLIENT_URL
+    console.log('Request Origin:', origin);
+    console.log('Allowed CLIENT_URL:', process.env.CLIENT_URL);
+    console.log('Is Origin Allowed?', !origin || allowedOrigins.includes(origin));
+
+    // บรรทัดที่ 29 (โดยประมาณ) คือเงื่อนไขนี้
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      // ถ้าเงื่อนไขข้างบนเป็น false จะมาเข้า else นี้ และเกิด Error
       callback(new Error('Not allowed by CORS'));
     }
   },
