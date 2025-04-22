@@ -16,7 +16,7 @@ const NODE_ENV = process.env.NODE_ENV;
 
 
 app.use(cors({
-  origin: NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173', 
+  origin: '*',
   credentials: true // เพิ่ม credentials: true เพื่อให้รับส่ง cookies ได้
 }));
 
