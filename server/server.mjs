@@ -14,21 +14,28 @@ const app = express();
 const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
 
+
 app.use(cors({
-  origin: NODE_ENV === 'production' ? 'CLIENT_URL' : '*',
+  origin: NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173', 
+  credentials: true // เพิ่ม credentials: true เพื่อให้รับส่ง cookies ได้
 }));
 
 morgan.token('date', (req, res) => {
-  return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'); // เวลาไทย
+  return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
 });
 
-app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
+if (NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+} else if (NODE_ENV === 'production') {
+  app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
+}
+
 app.use(express.json());
-app.use(cookieParser()); // เพิ่ม middleware สำหรับจัดการ cookie
+app.use(cookieParser()); 
 
 const prisma = new PrismaClient();
 
-//test route
+
 app.get('/', async (req, res) => {
   try {
     const users = await prisma.posts.findMany();
@@ -39,11 +46,11 @@ app.get('/', async (req, res) => {
   }
 });
 
-// ใช้ authRoute
+
 app.use('/api/auth', authRoute);
 
-app.listen(PORT, () => {
-  connectToDatabase();
+app.listen(PORT, async  () => {
+  await connectToDatabase();
   console.log(`Server is running on ${NODE_ENV} mode`);
 });
 
