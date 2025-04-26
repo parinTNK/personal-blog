@@ -14,33 +14,30 @@ const app = express();
 const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
 
-// --- CORS Configuration ---
+
 const allowedOrigins = [
-  process.env.CLIENT_URL, // <= ค่าจาก Render Env Var
-  'http://localhost:5173' // Development URL (adjust port if needed)
+  process.env.CLIENT_URL, 
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Log ค่า origin ที่ได้รับจริง และค่า process.env.CLIENT_URL
+
     console.log('Request Origin:', origin);
     console.log('Allowed CLIENT_URL:', process.env.CLIENT_URL);
     console.log('Is Origin Allowed?', !origin || allowedOrigins.includes(origin));
 
-    // บรรทัดที่ 29 (โดยประมาณ) คือเงื่อนไขนี้
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      // ถ้าเงื่อนไขข้างบนเป็น false จะมาเข้า else นี้ และเกิด Error
+     
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true // Crucial: Allow cookies to be sent and received
+  credentials: true
 }));
-// --- End CORS Configuration ---
 
 
-// --- Morgan Logging ---
+
 morgan.token('date', (req, res) => {
   return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
 });
@@ -50,11 +47,10 @@ if (NODE_ENV === 'development') {
 } else if (NODE_ENV === 'production') {
   app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
 }
-// --- End Morgan Logging ---
 
-app.use(express.json()); // Middleware to parse JSON bodies
-app.use(cookieParser()); // Middleware to parse cookies
 
+app.use(express.json()); 
+app.use(cookieParser()); 
 const prisma = new PrismaClient();
 
 app.get('/', async (req, res) => {
@@ -67,14 +63,13 @@ app.get('/', async (req, res) => {
   }
 });
 
-app.use('/api/auth', authRoute); // Mount authentication routes
-// --- End Routes ---
+app.use('/api/auth', authRoute); 
 
-// --- Server Listening ---
+
+
 app.listen(PORT, async  () => {
   await connectToDatabase();
   console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
-  // No need to call connectToDatabase() if using Prisma only
 });
-// --- End Server Listening ---
+
 
