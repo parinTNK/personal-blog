@@ -15,10 +15,28 @@ const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
 
 
+const allowedOrigins = [
+  process.env.CLIENT_URL, 
+];
+
 app.use(cors({
-  origin: NODE_ENV === 'production' ? process.env.CLIENT_URL : 'http://localhost:5173', 
-  credentials: true // เพิ่ม credentials: true เพื่อให้รับส่ง cookies ได้
+  origin: (origin, callback) => {
+
+    console.log('Request Origin:', origin);
+    console.log('Allowed CLIENT_URL:', process.env.CLIENT_URL);
+    console.log('Is Origin Allowed?', !origin || allowedOrigins.includes(origin));
+
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+     
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
 }));
+
+
 
 morgan.token('date', (req, res) => {
   return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
@@ -30,11 +48,10 @@ if (NODE_ENV === 'development') {
   app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
 }
 
-app.use(express.json());
+
+app.use(express.json()); 
 app.use(cookieParser()); 
-
 const prisma = new PrismaClient();
-
 
 app.get('/', async (req, res) => {
   try {
@@ -46,11 +63,13 @@ app.get('/', async (req, res) => {
   }
 });
 
+app.use('/api/auth', authRoute); 
 
-app.use('/api/auth', authRoute);
+
 
 app.listen(PORT, async  () => {
   await connectToDatabase();
-  console.log(`Server is running on ${NODE_ENV} mode`);
+  console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
 });
+
 
