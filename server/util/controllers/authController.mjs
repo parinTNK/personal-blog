@@ -78,8 +78,6 @@ const login = async (req, res) => {
       expiresIn: '1d',
     });
 
-
-
     const { password: _, ...userWithoutPassword } = user;
     res.status(200).json({
       message: 'Login successful.',
@@ -90,6 +88,7 @@ const login = async (req, res) => {
         username: userWithoutPassword.username,
         name: userWithoutPassword.name,
         role: userWithoutPassword.role,
+        profile_pic: userWithoutPassword.profile_pic,
       }
     });
 
