@@ -41,13 +41,17 @@ function Login() {
 
         try {
             const response = await axios.post(
-                `${API_BASE_URL}/api/auth/login`, // ใช้ URL จาก env
+                `${API_BASE_URL}/api/auth/login`,
                 formData,
-                { withCredentials: true } // เพื่อให้ browser รับ cookie จาก server
+  
+        
             );
 
+            const token = response.data.token;
+            localStorage.setItem("token", token); 
+
             console.log("Login successful:", response.data.user);
-            loginUser(response.data.user); // เมื่อ login สำเร็จ ให้ update user state
+            loginUser(response.data.user); 
             navigate("/");
 
         } catch (err) { 

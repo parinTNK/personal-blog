@@ -24,6 +24,7 @@ const userEditName = async (req, res) => {
                 email: true,
                 username: true,
                 name: true,
+                profile_pic: true,
                 role: true,
             },
         });

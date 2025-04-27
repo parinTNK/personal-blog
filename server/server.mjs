@@ -4,7 +4,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectToDatabase from './util/db.mjs';
 import { PrismaClient } from '@prisma/client';
-import cookieParser from 'cookie-parser';
 import authRoute from './util/routes/authRoute.mjs';
 import moment from 'moment-timezone';
 import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
@@ -16,7 +15,7 @@ const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
 
 const allowedOrigins = [
-  process.env.CLIENT_URL,,
+  process.env.CLIENT_URL,
   'http://localhost:5173',
 ];
 
@@ -48,7 +47,6 @@ if (NODE_ENV === 'development') {
 }
 
 app.use(express.json()); 
-app.use(cookieParser()); 
 const prisma = new PrismaClient();
 
 app.get('/', async (req, res) => {

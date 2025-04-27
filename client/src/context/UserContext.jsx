@@ -6,42 +6,61 @@ const API_BASE_URL = import.meta.env.MODE === 'production'
   ? import.meta.env.VITE_API_BASE_URL_PROD
   : import.meta.env.VITE_API_BASE_URL_DEV;
 
+axios.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
- // เก็บข้อมูล user ที่ login เข้ามา
+
   const loginUser = (userData) => {
     setCurrentUser(userData);
   };
 
   const logoutUser = async () => {
-     try {
-        // ใช้ API_BASE_URL ที่ได้จาก env
-        await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, { withCredentials: true });
-        setCurrentUser(null);
-     } catch (error) {
-        console.error("Error logging out:", error);
-        setCurrentUser(null);
-     }
+
+     setCurrentUser(null);
+     localStorage.removeItem('token');
+     console.log("User logged out, token removed.");
   };
 
-    // ตรวจสอบว่า user login เข้ามาหรือยัง
+  
   useEffect(() => {
     const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+          setLoading(false);
+          setCurrentUser(null);
+          return;
+      }
+
       try {
-        // ใช้ API_BASE_URL ที่ได้จาก env
-        const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
-          withCredentials: true, // ตรวจสอบว่ามี option นี้แล้ว
-        });
+        const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
         if (response.data && response.data.user) {
           setCurrentUser(response.data.user);
+        } else {
+          setCurrentUser(null);
+          localStorage.removeItem('token');
         }
       } catch (error) {
-        console.log("User not authenticated:", error.response?.data?.error || error.message);
+        console.log("Auth check failed:", error.response?.data?.error || error.message);
         setCurrentUser(null);
+        if (error.response?.status === 401 || error.response?.status === 403) {
+            localStorage.removeItem('token');
+        }
       } finally {
         setLoading(false);
       }

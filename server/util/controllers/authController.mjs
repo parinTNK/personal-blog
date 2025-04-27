@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import generateCookie from '../helpers/cookieHelper.mjs';
+
 
 const prisma = new PrismaClient();
 
@@ -11,6 +11,7 @@ const userSelectFields = {
   username: true,
   name: true,
   role: true,
+  profile_pic: true,
 };
 
 
@@ -77,11 +78,12 @@ const login = async (req, res) => {
       expiresIn: '1d',
     });
 
-    generateCookie(res, token);
+
 
     const { password: _, ...userWithoutPassword } = user;
     res.status(200).json({
       message: 'Login successful.',
+      token: token,
       user: {
         id: userWithoutPassword.id,
         email: userWithoutPassword.email,
@@ -98,12 +100,8 @@ const login = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
-  });
-  res.status(200).json({ message: 'Logout successful.' });
+  localStorage.removeItem('token');
+  res.status(200).json({ message: 'Logout acknowledged.' });
 };
 
 
@@ -117,11 +115,10 @@ const getCurrentUser = async (req, res) => {
 
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      select: userSelectFields,
+      select: userSelectFields, 
     });
 
     if (!user) {
-      res.clearCookie('token');
       return res.status(404).json({ error: 'User not found.' });
     }
 
@@ -132,5 +129,6 @@ const getCurrentUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user data.' });
   }
 };
+
 
 export { register, login, logout, getCurrentUser };
