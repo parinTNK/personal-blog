@@ -4,9 +4,9 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectToDatabase from './util/db.mjs';
 import { PrismaClient } from '@prisma/client';
-import cookieParser from 'cookie-parser';
 import authRoute from './util/routes/authRoute.mjs';
 import moment from 'moment-timezone';
+import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
 
 dotenv.config();
 
@@ -14,9 +14,9 @@ const app = express();
 const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
 
-
 const allowedOrigins = [
-  process.env.CLIENT_URL, 
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
 ];
 
 app.use(cors({
@@ -36,8 +36,6 @@ app.use(cors({
   credentials: true
 }));
 
-
-
 morgan.token('date', (req, res) => {
   return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
 });
@@ -48,9 +46,7 @@ if (NODE_ENV === 'development') {
   app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
 }
 
-
 app.use(express.json()); 
-app.use(cookieParser()); 
 const prisma = new PrismaClient();
 
 app.get('/', async (req, res) => {
@@ -63,8 +59,8 @@ app.get('/', async (req, res) => {
   }
 });
 
-app.use('/api/auth', authRoute); 
-
+app.use('/api/auth', authRoute);
+app.use('/api/member', memberUpdateRoute);
 
 
 app.listen(PORT, async  () => {
