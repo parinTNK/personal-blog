@@ -7,13 +7,13 @@ import { PrismaClient } from '@prisma/client';
 import cookieParser from 'cookie-parser';
 import authRoute from './util/routes/authRoute.mjs';
 import moment from 'moment-timezone';
+import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
 const NODE_ENV = process.env.NODE_ENV;
-
 
 const allowedOrigins = [
   process.env.CLIENT_URL,,
@@ -37,8 +37,6 @@ app.use(cors({
   credentials: true
 }));
 
-
-
 morgan.token('date', (req, res) => {
   return moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
 });
@@ -48,7 +46,6 @@ if (NODE_ENV === 'development') {
 } else if (NODE_ENV === 'production') {
   app.use(morgan(':remote-addr - :remote-user [:date] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));
 }
-
 
 app.use(express.json()); 
 app.use(cookieParser()); 
@@ -64,8 +61,8 @@ app.get('/', async (req, res) => {
   }
 });
 
-app.use('/api/auth', authRoute); 
-
+app.use('/api/auth', authRoute);
+app.use('/api/member', memberUpdateRoute);
 
 
 app.listen(PORT, async  () => {
