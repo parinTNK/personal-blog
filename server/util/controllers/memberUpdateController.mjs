@@ -26,6 +26,7 @@ const userEditName = async (req, res) => {
                 name: true,
                 profile_pic: true,
                 role: true,
+                bio: true,
             },
         });
 

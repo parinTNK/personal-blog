@@ -65,6 +65,7 @@ model users {
   name        String     @db.VarChar(100)
   profile_pic String?
   role        String     @db.VarChar(10)
+  bio         String?    @db.VarChar(120)
   comments    comments[]
   likes       likes[]
 }

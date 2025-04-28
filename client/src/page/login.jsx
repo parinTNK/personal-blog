@@ -35,7 +35,7 @@ function Login() {
 
         if (!formData.email || !formData.password) {
             toast.error("Please enter both email and password.");
-            setApiError("Validation failed");
+            setApiError("Validation failed"); // Keep setting apiError for input highlighting
             return;
         }
 
@@ -43,18 +43,25 @@ function Login() {
             const response = await axios.post(
                 `${API_BASE_URL}/api/auth/login`,
                 formData,
-  
-        
             );
 
             const token = response.data.token;
-            localStorage.setItem("token", token); 
+            const user = response.data.user; // Get user data from response
 
-            console.log("Login successful:", response.data.user);
-            loginUser(response.data.user); 
-            navigate("/");
+            localStorage.setItem("token", token);
+            loginUser(user); // Update user context
 
-        } catch (err) { 
+            // Check user role and navigate accordingly
+            if (user && user.role === 'admin') {
+                console.log("Admin user detected, navigating to /admin");
+                navigate("/admin"); // Navigate to admin page
+            } else {
+                console.log("Regular user detected, navigating to /");
+                navigate("/"); // Navigate to home page
+            }
+
+        } catch (err) {
+            // ... existing error handling ...
             const errorMessage = err.response?.data?.error || "Login failed. Please check your credentials.";
             setApiError(errorMessage);
 
