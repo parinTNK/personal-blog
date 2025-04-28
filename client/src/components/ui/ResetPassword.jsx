@@ -145,8 +145,7 @@ function ResetPassword() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-lg shadow-sm flex flex-col gap-5">
-        {/* Pass type="password" to InputField */}
+      <form onSubmit={handleSubmit} className="bg-gray-100 p-6 rounded-lg shadow-sm flex flex-col gap-5">
         <InputField
           label="Current password"
           id="currentPassword"
