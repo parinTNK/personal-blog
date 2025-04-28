@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 
-
 const prisma = new PrismaClient();
 
 const userSelectFields = {
@@ -12,20 +11,20 @@ const userSelectFields = {
   name: true,
   role: true,
   profile_pic: true,
+  bio: true,
 };
-
 
 const register = async (req, res) => {
   const { email, password, username, name } = req.body;
+
   if (!email || !password || !username) {
     return res.status(400).json({ error: 'Email, password, and username are required.' });
   }
 
   try {
     const existingUser = await prisma.users.findFirst({
-      where: {
-        OR: [{ email }, { username }],
-      },
+      where: { OR: [{ email }, { username }] },
+      select: { email: true, username: true },
     });
 
     if (existingUser) {
@@ -46,7 +45,6 @@ const register = async (req, res) => {
       select: userSelectFields,
     });
 
-
     res.status(201).json({ message: 'User registered successfully.', user: newUser });
 
   } catch (error) {
@@ -63,34 +61,32 @@ const login = async (req, res) => {
   }
 
   try {
-    const user = await prisma.users.findUnique({ where: { email } });
+    const user = await prisma.users.findUnique({
+      where: { email },
+      select: {
+        ...userSelectFields,
+        password: true,
+      },
+    });
+
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
-    const tokenPayload = { id: user.id, role: user.role };
-    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
-      expiresIn: '1d',
-    });
+    delete user.password;
 
-    const { password: _, ...userWithoutPassword } = user;
-    res.status(200).json({
-      message: 'Login successful.',
-      token: token,
-      user: {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        username: userWithoutPassword.username,
-        name: userWithoutPassword.name,
-        role: userWithoutPassword.role,
-        profile_pic: userWithoutPassword.profile_pic,
-      }
-    });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    res.status(200).json({ token, user });
 
   } catch (error) {
     console.error('Error logging in:', error);
@@ -99,26 +95,24 @@ const login = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  localStorage.removeItem('token');
-  res.status(200).json({ message: 'Logout acknowledged.' });
+  res.status(200).json({ message: 'Logout successful. Please remove token from client storage.' });
 };
 
-
 const getCurrentUser = async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required or token invalid.' });
+  }
+
   try {
-    const userId = req.user?.id;
-
-    if (!userId) {
-        return res.status(401).json({ error: 'Authentication required.' });
-    }
-
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      select: userSelectFields, 
+      select: userSelectFields,
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
+      return res.status(404).json({ error: 'User associated with token not found.' });
     }
 
     res.status(200).json({ user });
@@ -128,6 +122,5 @@ const getCurrentUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch user data.' });
   }
 };
-
 
 export { register, login, logout, getCurrentUser };

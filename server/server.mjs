@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import authRoute from './util/routes/authRoute.mjs';
 import moment from 'moment-timezone';
 import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
+import adminRoutes from './util/routes/adminRoute.mjs'; // Import admin routes
 
 dotenv.config();
 
@@ -61,7 +62,7 @@ app.get('/', async (req, res) => {
 
 app.use('/api/auth', authRoute);
 app.use('/api/member', memberUpdateRoute);
-
+app.use('/api/admin', adminRoutes); // Mount admin routes under /api/admin
 
 app.listen(PORT, async  () => {
   await connectToDatabase();
