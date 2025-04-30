@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar'; // Adjust path if needed
 import AdminProfile from '@/components/admin/AdminProfile'; // Adjust path if needed
+import AdminResetPassword from '@/components/admin/AdminResetPassword'; // Import the reset password component
 // Import other admin section components here as needed
 // import ArticleManagement from '@/components/admin/ArticleManagement';
 // import CategoryManagement from '@/components/admin/CategoryManagement';
 // import NotificationSettings from '@/components/admin/NotificationSettings';
-// import AdminResetPassword from '@/components/admin/AdminResetPassword';
 
 function Admin() {
   // Default to 'profile' or load from URL/state if needed
@@ -22,7 +22,7 @@ function Admin() {
       case 'notifications':
         return <div>Notification Settings Content</div>; // Replace with actual component
       case 'password':
-        return <div>Admin Reset Password Content</div>; // Replace with actual component
+        return <AdminResetPassword />; // Use the actual AdminResetPassword component
       default:
         return <AdminProfile />; // Fallback to profile
     }

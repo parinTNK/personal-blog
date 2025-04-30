@@ -3,7 +3,17 @@ import bcrypt from 'bcrypt'; // Needed if password change is added later
 
 const prisma = new PrismaClient();
 
-// --- Add this new function ---
+// User select fields constant for consistency
+const userSelectFields = {
+  id: true,
+  email: true,
+  username: true,
+  name: true,
+  role: true,
+  profile_pic: true,
+  bio: true,
+};
+
 export const updateUserByAdmin = async (req, res) => {
   const { userId } = req.params; // Get user ID from URL parameter
   const { username, name, email, bio } = req.body; // Data to update
@@ -47,15 +57,7 @@ export const updateUserByAdmin = async (req, res) => {
     const updatedUser = await prisma.users.update({
       where: { id: userId },
       data: updateData,
-      select: { // Select fields to return (exclude password)
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        role: true,
-        profile_pic: true,
-        bio: true, // Include bio if it's in your schema
-      },
+      select: userSelectFields,
     });
 
     res.status(200).json({ message: 'User updated successfully by admin.', user: updatedUser });
@@ -68,6 +70,60 @@ export const updateUserByAdmin = async (req, res) => {
     res.status(500).json({ error: 'Failed to update user.' });
   }
 };
-// --- End of new function ---
+
+export const resetPasswordByAdmin = async (req, res) => {
+  const { userId } = req.params;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+  }
+
+  try {
+    // First check if this is admin resetting their own password or another user's
+    const isOwnAccount = userId === req.user.id;
+
+    // If admin is resetting their own password, current password must be verified
+    if (isOwnAccount && !currentPassword) {
+      return res.status(400).json({ error: 'Current password is required when resetting your own password.' });
+    }
+
+    // Find the user to reset password
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // If admin is resetting their own password, verify the current password
+    if (isOwnAccount) {
+      const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: 'Current password is incorrect.' });
+      }
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    await prisma.users.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    res.status(200).json({ message: 'Password has been reset successfully.' });
+
+  } catch (error) {
+    console.error('Error resetting password by admin:', error);
+    if (error.code === 'P2025') { // Prisma error code for record not found
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.status(500).json({ error: 'Failed to reset password.' });
+  }
+};
 
 // Keep other existing functions like getUserById, etc.
