@@ -133,29 +133,53 @@ function CreateArticle({ onDone }) {
     setImageUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/api/upload`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      setFormData(prev => ({
-        ...prev,
-        image: response.data.imageUrl
-      }));
-
+      await handleImageUpload(file);
       showToast('success', 'Success', 'Image uploaded successfully');
     } catch (error) {
       console.error('Error uploading image:', error);
+      showToast('error', 'Error', 'Failed to upload image');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const handleImageUpload = async (file) => {
+    if (!file) {
+      console.error('No file selected');
+      return;
+    }
+    
+    setImageUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    try {
+      console.log('Sending request to:', `${API_BASE_URL}/api/upload`);
+      
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${API_BASE_URL}/api/upload`, 
+        formData, 
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      console.log('Upload response:', response);
+      
+      if (response.data && response.data.imageUrl) {
+        setFormData(prev => ({
+          ...prev,
+          image: response.data.imageUrl
+        }));
+        showToast('success', 'Success', 'Image uploaded successfully');
+        console.log("Image URL saved to state:", response.data.imageUrl);
+      }
+    } catch (error) {
+      console.error('Upload error:', error.response || error);
       showToast('error', 'Error', 'Failed to upload image');
     } finally {
       setImageUploading(false);
@@ -179,7 +203,8 @@ const handleSubmit = async (status) => {
 
     const postData = {
       ...formData,
-      status_id: statusId
+      status_id: statusId,
+      imageUrl: formData.image
     };
 
     console.log('Data being sent to API:', postData);
@@ -304,6 +329,11 @@ const handleSubmit = async (status) => {
                 className="hidden"
                 accept="image/jpeg,image/png,image/gif,image/webp"
                 disabled={imageUploading}
+              />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e.target.files[0])}
               />
             </div>
           </div>

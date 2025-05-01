@@ -47,9 +47,6 @@ function EditArticle({ id, onDone }) {
         status_id: article.status_id,
       });
       
-      console.log('Form data after fetch:', {
-        status_id: article.status_id,
-      });
     } catch (error) {
       console.error('Error fetching article:', error);
       showToast('error', 'Error', 'Failed to load article');
