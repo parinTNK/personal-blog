@@ -19,10 +19,7 @@ const API_BASE_URL = import.meta.env.MODE === "production"
 function ArticleBar({ setSelectedCategory, setSearchQuery }) {
   const [activeCategory, setActiveCategory] = useState("Highlight");
   const [categories, setCategories] = useState([
-    { id: null, name: "Highlight" },
-    { id: 1, name: "Cat" },
-    { id: 2, name: "Inspiration" },
-    { id: 3, name: "General" }
+    { id: null, name: "Highlight" }
   ]);
   const [inputValue, setInputValue] = useState("");
 

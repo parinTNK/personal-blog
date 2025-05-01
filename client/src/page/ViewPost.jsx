@@ -48,7 +48,7 @@ function ViewPost() {
     }, [id]);
 
     const handleGoBack = () => {
-        navigate('/blog');
+        navigate('/');
     };
 
     if (loading) {

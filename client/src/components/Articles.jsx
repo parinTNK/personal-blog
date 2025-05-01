@@ -11,6 +11,7 @@ const API_BASE_URL = import.meta.env.MODE === "production"
 
 function Articles() {
   const [blogPosts, setBlogPosts] = useState([]);
+  const [categories, setCategories] = useState([]); // State สำหรับเก็บหมวดหมู่
   const [selectedCategory, setSelectedCategory] = useState("Highlight");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -21,6 +22,17 @@ function Articles() {
     totalItems: 0,
     itemsPerPage: 6
   });
+
+  // ฟังก์ชันดึงข้อมูลหมวดหมู่
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/categories`);
+      const fetchedCategories = response.data.categories || [];
+      setCategories(fetchedCategories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   // ฟังก์ชันดึงข้อมูลบทความ
   const fetchPosts = async (page = 1, loadMore = false) => {
@@ -88,15 +100,15 @@ function Articles() {
   
   // Helper function เพื่อหา category_id จากชื่อ category
   const getCategoryIdByName = (categoryName) => {
-    const categoryMap = {
-      "Highlight": null,
-      "Cat": 1,
-      "Inspiration": 2,
-      "General": 3
-      // เพิ่มหมวดหมู่อื่นๆ ตามที่มีในฐานข้อมูล
-    };
-    return categoryMap[categoryName] || null;
+    if (categoryName === "Highlight") return null; // Highlight ไม่มี category_id
+    const category = categories.find(cat => cat.name === categoryName);
+    return category ? category.id : null;
   };
+
+  // โหลดข้อมูลหมวดหมู่เมื่อ component ถูก mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   // โหลดข้อมูลเมื่อเปลี่ยนหมวดหมู่หรือคำค้นหา
   useEffect(() => {
@@ -122,6 +134,7 @@ function Articles() {
       <ArticleBar 
         setSelectedCategory={setSelectedCategory} 
         setSearchQuery={setSearchQuery}
+        categories={["Highlight", ...categories.map(cat => cat.name)]} // ส่งหมวดหมู่ไปยัง ArticleBar
       />
 
       {/* แสดงสถานะการโหลด */}
