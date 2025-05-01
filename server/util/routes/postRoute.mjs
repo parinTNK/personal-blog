@@ -1,14 +1,25 @@
 import express from 'express';
 import multer from 'multer';
-import { createPost, getAllPosts, getPostById, updatePost, deletePost, uploadImage } from '../controllers/postController.mjs';
+import { 
+  createPost, 
+  getAllPosts, 
+  getPostById, 
+  updatePost, 
+  deletePost, 
+  uploadImage,
+  getPublicPosts // เพิ่ม controller ใหม่
+} from '../controllers/postController.mjs';
 import { authenticateToken } from '../middleware/authMiddleware.mjs';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' }); // เก็บไฟล์ชั่วคราวในโฟลเดอร์ uploads
 
+// API สำหรับหน้าเว็บสาธารณะ
+router.get('/public', getPublicPosts);
+
 // Routes
 router.get('/', getAllPosts);  // ตรวจสอบว่ามีการลงทะเบียน route นี้หรือไม่
-router.get('/:id', getPostById);
+router.get('/:id', getPostById); // ดึงข้อมูลบทความเดี่ยวโดยใช้ ID
 router.post('/', authenticateToken, createPost);
 router.put('/:id', authenticateToken, updatePost);
 router.delete('/:id', authenticateToken, deletePost);
