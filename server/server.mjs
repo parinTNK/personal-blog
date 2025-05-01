@@ -9,8 +9,9 @@ import moment from 'moment-timezone';
 import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
 import adminRoutes from './util/routes/adminRoute.mjs'; // Import admin routes
 import categoryRoutes from './util/routes/categoryRoute.mjs';
-import postRouter from './util/routes/postRoute.mjs';
-import userRouter from './util/routes/userRoute.mjs';
+import postRoutes from './util/routes/postRoute.mjs';
+import userRoutes from './util/routes/userRoute.mjs';
+import uploadRoutes from './util/routes/uploadRoute.mjs';
 
 dotenv.config();
 
@@ -69,8 +70,9 @@ app.use('/api/auth', authRoute);
 app.use('/api/member', memberUpdateRoute);
 app.use('/api/admin', adminRoutes); // Mount admin routes under /api/admin
 app.use('/api/categories', categoryRoutes);
-app.use('/api', postRouter);
-app.use('/api/user', userRouter);
+app.use('/api/posts', postRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/upload', uploadRoutes);
 
 app.listen(PORT, async  () => {
   await connectToDatabase();

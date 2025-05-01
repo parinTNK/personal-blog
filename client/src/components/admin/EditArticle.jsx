@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Toaster, toast } from 'react-hot-toast';
 import { ArrowLeft, Upload, Loader2, Save } from 'lucide-react';
+import { uploadImage } from '@/utils/imageUpload';
 
 const API_BASE_URL = import.meta.env.MODE === "production"
   ? import.meta.env.VITE_API_BASE_URL_PROD
@@ -16,6 +17,7 @@ function EditArticle({ id, onDone }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
@@ -47,9 +49,6 @@ function EditArticle({ id, onDone }) {
         status_id: article.status_id,
       });
       
-      console.log('Form data after fetch:', {
-        status_id: article.status_id,
-      });
     } catch (error) {
       console.error('Error fetching article:', error);
       showToast('error', 'Error', 'Failed to load article');
@@ -113,46 +112,32 @@ function EditArticle({ id, onDone }) {
     const file = e.target.files[0];
     if (!file) return;
     
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
-    
-    if (!allowedTypes.includes(file.type)) {
-      showToast('error', 'Error', 'Only JPG, PNG, GIF and WebP files are allowed');
-      return;
-    }
-    
-    if (file.size > maxSize) {
-      showToast('error', 'Error', 'Image size should be less than 5MB');
-      return;
-    }
+    // แสดงตัวอย่างรูปภาพก่อนอัปโหลด
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, previewImage: reader.result }));
+    };
+    reader.readAsDataURL(file);
     
     setImageUploading(true);
+    setUploadProgress(0);
     
     try {
-      const formData = new FormData();
-      formData.append('image', file);
+      // ใช้ฟังก์ชัน uploadImage ที่สร้างไว้
+      const result = await uploadImage(file, (progress) => {
+        setUploadProgress(progress);
+      });
       
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/api/upload`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      
+      // เก็บ URL รูปภาพใน state
       setFormData(prev => ({
         ...prev,
-        image: response.data.imageUrl
+        image: result.imageUrl
       }));
       
       showToast('success', 'Success', 'Image uploaded successfully');
     } catch (error) {
       console.error('Error uploading image:', error);
-      showToast('error', 'Error', 'Failed to upload image');
+      showToast('error', 'Error', error.message || 'Failed to upload image');
     } finally {
       setImageUploading(false);
     }
@@ -278,6 +263,7 @@ function EditArticle({ id, onDone }) {
                     <>
                       <Loader2 className="h-8 w-8 animate-spin text-gray-400 mb-2" />
                       <p className="text-gray-500">Uploading image...</p>
+                      <p className="text-gray-500">{uploadProgress}%</p>
                     </>
                   ) : (
                     <>

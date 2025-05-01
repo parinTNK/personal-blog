@@ -15,9 +15,17 @@ const userSelectFields = {
 
 export const updateUserByAdmin = async (req, res) => {
   const { userId } = req.params;
-  const { username, name, email, bio } = req.body;
+  const { name, username, email, bio, profile_pic } = req.body;  // เพิ่ม profile_pic
 
-  if (!username && !name && !email && !bio) {
+  // เพิ่ม log เพื่อตรวจสอบข้อมูลที่ส่งมา
+  console.log('Update user request:', { 
+    userId, 
+    requestUser: req.user.id,
+    isAdmin: req.user.role === 'admin',
+    body: req.body 
+  });
+
+  if (!username && !name && !email && !bio && !profile_pic) {
     return res.status(400).json({ error: 'No update data provided.' });
   }
 
@@ -25,6 +33,7 @@ export const updateUserByAdmin = async (req, res) => {
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
+    if (profile_pic !== undefined) updateData.profile_pic = profile_pic;  // เพิ่มการรองรับ profile_pic
 
     if (username || email) {
       const existingUserCheck = await prisma.users.findFirst({

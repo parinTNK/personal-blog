@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import axios from 'axios';
 import { Toaster, toast } from 'react-hot-toast';
+import { uploadImage } from '@/utils/imageUpload';
 
 const API_BASE_URL = import.meta.env.MODE === "production"
   ? import.meta.env.VITE_API_BASE_URL_PROD
@@ -19,6 +20,8 @@ function AdminProfile() {
   const [bio, setBio] = useState('');
   const [profilePic, setProfilePic] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (currentUser) {
@@ -51,18 +54,75 @@ function AdminProfile() {
     );
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    if (file && file.size > maxSize) {
-        showToast("error", "File Too Large", "Image size should not exceed 5MB.");
-        event.target.value = null;
-        return;
+    if (!file) return;
+    
+    // แสดงตัวอย่างรูปภาพก่อนอัปโหลด
+    const reader = new FileReader();
+    reader.onloadend = () => { 
+      setProfilePic(reader.result); 
+    };
+    reader.readAsDataURL(file);
+    
+    // อัปโหลดรูปภาพอัตโนมัติ
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    try {
+      const result = await uploadImage(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      
+      // บันทึกลงฐานข้อมูลทันที
+      await updateProfilePic(result.imageUrl);
+      showToast("success", "Success", "Profile picture updated successfully");
+      
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showToast("error", "Error", error.message || "Failed to upload image");
+      // กลับไปใช้รูปเดิมถ้าอัปโหลดไม่สำเร็จ
+      setProfilePic(currentUser?.profile_pic || null);
+    } finally {
+      setIsUploading(false);
     }
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => { setProfilePic(reader.result); };
-      reader.readAsDataURL(file);
+  };
+  
+  const updateProfilePic = async (imageUrl) => {
+    if (!currentUser || !currentUser.id) {
+      showToast("error", "Error", "User data not available.");
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("error", "Authentication Error", "Please log in again.");
+        return;
+      }
+      
+      // เรียกใช้ API อัพเดทรูปโปรไฟล์
+      const response = await axios.put(
+        `${API_BASE_URL}/api/admin/users/${currentUser.id}`,
+        { profile_pic: imageUrl },
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+      
+      if (response.data?.user) {
+        // อัพเดต state และ context
+        setProfilePic(imageUrl);
+        loginUser(response.data.user);
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      throw error;
     }
   };
 
@@ -131,7 +191,7 @@ function AdminProfile() {
         <h1 className="text-2xl font-semibold text-gray-900">Profile</h1>
         <Button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || isUploading}
           className="bg-gray-900 text-white hover:bg-gray-700 px-5"
         >
           {isSaving ? 'Saving...' : 'Save'}
@@ -139,17 +199,38 @@ function AdminProfile() {
       </div>
 
       <div className="flex items-center gap-6 mb-12">
-         <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
-           {profilePic ? ( <img src={profilePic} alt="Profile" className="w-full h-full object-cover" /> ) : ( <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No Pic</div> )}
-         </div>
-         <div>
-           <input type="file" id="profilePicUpload" accept="image/*" onChange={handleFileChange} className="hidden" />
-           <Button variant="outline" asChild>
-             <Label htmlFor="profilePicUpload" className="cursor-pointer"> Upload profile picture </Label>
-           </Button>
-           <p className="text-xs text-gray-500 mt-1.5">PNG, JPG, GIF up to 5MB.</p>
-         </div>
-       </div>
+        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
+          {isUploading && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+              <div className="loader w-6 h-6 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+              {uploadProgress > 0 && (
+                <span className="text-white text-xs mt-1">{uploadProgress}%</span>
+              )}
+            </div>
+          )}
+          {profilePic ? (
+            <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No Pic</div>
+          )}
+        </div>
+        <div>
+          <input 
+            type="file" 
+            id="profilePicUpload" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="hidden" 
+            disabled={isUploading}
+          />
+          <Button variant="outline" asChild disabled={isUploading}>
+            <Label htmlFor="profilePicUpload" className={`cursor-pointer ${isUploading ? 'opacity-50' : ''}`}>
+              {isUploading ? 'Uploading...' : 'Upload profile picture'}
+            </Label>
+          </Button>
+          <p className="text-xs text-gray-500 mt-1.5">PNG, JPG, GIF up to 5MB.</p>
+        </div>
+      </div>
 
       <div className="space-y-8">
         <div>
@@ -175,7 +256,7 @@ function AdminProfile() {
             disabled={isSaving}
             className="resize-none"
           />
-           <p className="text-xs text-gray-500 mt-1.5 text-right">{bio.length}/120</p>
+          <p className="text-xs text-gray-500 mt-1.5 text-right">{bio.length}/120</p>
         </div>
       </div>
     </div>
