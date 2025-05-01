@@ -81,7 +81,6 @@ function AdminResetPassword() {
         }
       );
       
-      // Fixed: Removed extra closing div tag
       toast.custom((t) => (
         <div
           className={`${

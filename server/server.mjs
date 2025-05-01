@@ -8,6 +8,7 @@ import authRoute from './util/routes/authRoute.mjs';
 import moment from 'moment-timezone';
 import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
 import adminRoutes from './util/routes/adminRoute.mjs'; // Import admin routes
+import categoryRoutes from './util/routes/categoryRoute.mjs';
 
 dotenv.config();
 
@@ -22,11 +23,9 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-
-    console.log('Request Origin:', origin);
-    console.log('Allowed CLIENT_URL:', process.env.CLIENT_URL);
-    console.log('Is Origin Allowed?', !origin || allowedOrigins.includes(origin));
-
+    // console.log('Request Origin:', origin);
+    // console.log('Allowed CLIENT_URL:', process.env.CLIENT_URL);
+    // console.log('Is Origin Allowed?', !origin || allowedOrigins.includes(origin));
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -63,6 +62,7 @@ app.get('/', async (req, res) => {
 app.use('/api/auth', authRoute);
 app.use('/api/member', memberUpdateRoute);
 app.use('/api/admin', adminRoutes); // Mount admin routes under /api/admin
+app.use('/api/categories', categoryRoutes);
 
 app.listen(PORT, async  () => {
   await connectToDatabase();
