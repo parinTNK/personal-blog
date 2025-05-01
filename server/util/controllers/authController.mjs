@@ -99,27 +99,34 @@ const logout = (req, res) => {
 };
 
 const getCurrentUser = async (req, res) => {
-  const userId = req.user?.id;
-
-  if (!userId) {
-    return res.status(401).json({ error: 'Authentication required or token invalid.' });
-  }
-
   try {
+    const userId = req.user.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
     const user = await prisma.users.findUnique({
       where: { id: userId },
-      select: userSelectFields,
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        email: true,
+        profile_pic: true,
+        role: true,
+        bio: true
+      }
     });
-
+    
     if (!user) {
-      return res.status(404).json({ error: 'User associated with token not found.' });
+      return res.status(404).json({ error: 'User not found' });
     }
-
+    
     res.status(200).json({ user });
-
   } catch (error) {
-    console.error('Error fetching current user:', error);
-    res.status(500).json({ error: 'Failed to fetch user data.' });
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ error: 'Failed to fetch user data' });
   }
 };
 

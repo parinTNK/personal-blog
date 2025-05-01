@@ -1,19 +1,22 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/authMiddleware.mjs'; // Assuming path
-// import { isAdmin } from '../middleware/adminMiddleware.mjs'; // Import isAdmin
-import { updateUserByAdmin } from '../controllers/adminController.mjs'; // Adjust path/controller name if needed
+import { authenticateToken } from '../middleware/authMiddleware.mjs';
+import { isAdmin } from '../middleware/adminMiddleware.mjs';
+import { updateUserByAdmin, resetPasswordByAdmin } from '../controllers/adminController.mjs';
 
 const router = express.Router();
 
-// Route for admin to update any user's profile details (excluding password, profile pic for now)
-// Requires authentication and admin role
 router.put(
-    '/users/:userId', // Use userId from URL parameter
-    authenticateToken, // 1. Check if user is logged in
-    // isAdmin,           // 2. Check if user has 'admin' role
-    updateUserByAdmin  // 3. If both pass, proceed to controller
+    '/users/:userId',
+    authenticateToken,
+    isAdmin,
+    updateUserByAdmin
 );
 
-// Add other admin-specific routes here...
+router.post(
+    '/users/:userId/reset-password',
+    authenticateToken,
+    isAdmin,
+    resetPasswordByAdmin
+);
 
 export default router;
