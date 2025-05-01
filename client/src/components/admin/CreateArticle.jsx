@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Toaster, toast } from 'react-hot-toast';
 import { ArrowLeft, Upload, Loader2, Save } from 'lucide-react';
+import { uploadImage } from '@/utils/imageUpload';
 
 const API_BASE_URL = import.meta.env.MODE === "production"
   ? import.meta.env.VITE_API_BASE_URL_PROD
@@ -17,6 +18,7 @@ function CreateArticle({ onDone }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -116,100 +118,80 @@ function CreateArticle({ onDone }) {
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
-
-    if (!allowedTypes.includes(file.type)) {
-      showToast('error', 'Error', 'Only JPG, PNG, GIF and WebP files are allowed');
-      return;
-    }
-
-    if (file.size > maxSize) {
-      showToast('error', 'Error', 'Image size should be less than 5MB');
-      return;
-    }
-
+    
+    // แสดงตัวอย่างรูปภาพก่อนอัปโหลด
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData(prev => ({ ...prev, previewImage: reader.result }));
+    };
+    reader.readAsDataURL(file);
+    
     setImageUploading(true);
-
+    setUploadProgress(0);
+    
     try {
-      await handleImageUpload(file);
+      // ใช้ฟังก์ชัน uploadImage ที่สร้างไว้
+      const result = await uploadImage(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      
+      // เก็บ URL รูปภาพใน state
+      setFormData(prev => ({
+        ...prev,
+        image: result.imageUrl
+      }));
+      
       showToast('success', 'Success', 'Image uploaded successfully');
     } catch (error) {
       console.error('Error uploading image:', error);
-      showToast('error', 'Error', 'Failed to upload image');
-    } finally {
-      setImageUploading(false);
-    }
-  };
-
-  const handleImageUpload = async (file) => {
-    if (!file) {
-      console.error('No file selected');
-      return;
-    }
-    
-    setImageUploading(true);
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    try {
-      console.log('Sending request to:', `${API_BASE_URL}/api/upload`);
-      
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${API_BASE_URL}/api/upload`, 
-        formData, 
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      
-      console.log('Upload response:', response);
-      
-      if (response.data && response.data.imageUrl) {
-        setFormData(prev => ({
-          ...prev,
-          image: response.data.imageUrl
-        }));
-        showToast('success', 'Success', 'Image uploaded successfully');
-        console.log("Image URL saved to state:", response.data.imageUrl);
-      }
-    } catch (error) {
-      console.error('Upload error:', error.response || error);
-      showToast('error', 'Error', 'Failed to upload image');
+      showToast('error', 'Error', error.message || 'Failed to upload image');
     } finally {
       setImageUploading(false);
     }
   };
 
 const handleSubmit = async (status) => {
+  // ตรวจสอบข้อมูลที่จำเป็นก่อนส่ง
+  if (!formData.title) {
+    showToast('error', 'Error', 'Title is required');
+    return;
+  }
+  
+  if (!formData.category_id) {
+    showToast('error', 'Error', 'Category is required');
+    return;
+  }
+  
+  if (!formData.content) {
+    showToast('error', 'Error', 'Content is required');
+    return;
+  }
+  
   const statusId = status === 'publish' ? 2 : 1;
-
-  console.log('Status being sent to API:', status, statusId);
-
+  
   setIsSaving(true);
-
+  
   try {
     const token = localStorage.getItem('token');
-
+    
     if (!token) {
       showToast('error', 'Error', 'You must be logged in to create an article');
       return;
     }
-
+    
+    // ข้อมูลที่จะส่งไปยัง API
     const postData = {
-      ...formData,
+      title: formData.title,
+      content: formData.content,
+      category_id: formData.category_id,
+      description: formData.description,
       status_id: statusId,
-      imageUrl: formData.image
+      image: formData.image // ใช้ URL รูปภาพที่อัพโหลดไว้แล้ว
     };
-
-    console.log('Data being sent to API:', postData);
-
-    await axios.post(
+    
+    console.log('Sending post data to API:', postData);
+    
+    const response = await axios.post(
       `${API_BASE_URL}/api/posts`,
       postData,
       {
@@ -219,18 +201,21 @@ const handleSubmit = async (status) => {
         }
       }
     );
-
+    
+    console.log('API response:', response.data);
+    
     showToast('success', 'Success', status === 'publish' ? 'Article published successfully' : 'Article saved as draft');
-
+    
+    // รอสักครู่ก่อนไปหน้าอื่น
     setTimeout(() => {
       if (onDone) {
         onDone();
       }
     }, 1500);
-
+    
   } catch (error) {
     console.error('Error creating article:', error.response?.data || error);
-    showToast('error', 'Error', 'Failed to create article');
+    showToast('error', 'Error', error.response?.data?.error || 'Failed to create article');
   } finally {
     setIsSaving(false);
   }
@@ -290,7 +275,7 @@ const handleSubmit = async (status) => {
               {formData.image ? (
                 <div className="h-full w-full relative">
                   <img 
-                    src={formData.image} 
+                    src={formData.previewImage || formData.image} 
                     alt="Article thumbnail" 
                     className="h-full w-full object-contain"
                   />
@@ -299,9 +284,18 @@ const handleSubmit = async (status) => {
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute bottom-2 right-2 bg-white"
+                    disabled={imageUploading}
                   >
-                    Change
+                    {imageUploading ? 'Uploading...' : 'Change'}
                   </Button>
+                  
+                  {/* แสดงความคืบหน้า */}
+                  {imageUploading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-white mb-2" />
+                      <p className="text-white">{uploadProgress}% Uploaded</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div 
@@ -311,7 +305,7 @@ const handleSubmit = async (status) => {
                   {imageUploading ? (
                     <>
                       <Loader2 className="h-8 w-8 animate-spin text-gray-400 mb-2" />
-                      <p className="text-gray-500">Uploading image...</p>
+                      <p className="text-gray-500">Uploading image... {uploadProgress}%</p>
                     </>
                   ) : (
                     <>
@@ -329,11 +323,6 @@ const handleSubmit = async (status) => {
                 className="hidden"
                 accept="image/jpeg,image/png,image/gif,image/webp"
                 disabled={imageUploading}
-              />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e.target.files[0])}
               />
             </div>
           </div>

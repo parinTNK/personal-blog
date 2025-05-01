@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import axios from 'axios';
 import { Toaster, toast } from 'react-hot-toast';
+import { uploadImage } from '@/utils/imageUpload';
 
 const API_BASE_URL = import.meta.env.MODE === "production"
   ? import.meta.env.VITE_API_BASE_URL_PROD
@@ -20,7 +21,7 @@ function AdminProfile() {
   const [profilePic, setProfilePic] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  // Removed unused selectedFile state
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     if (currentUser) {
@@ -55,17 +56,7 @@ function AdminProfile() {
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-    
     if (!file) return;
-    
-    if (file.size > maxSize) {
-      showToast("error", "File Too Large", "Image size should not exceed 5MB.");
-      event.target.value = null;
-      return;
-    }
-    
-    // setSelectedFile(file);
     
     // แสดงตัวอย่างรูปภาพก่อนอัปโหลด
     const reader = new FileReader();
@@ -75,54 +66,23 @@ function AdminProfile() {
     reader.readAsDataURL(file);
     
     // อัปโหลดรูปภาพอัตโนมัติ
-    await handleUploadProfilePic(file);
-  };
-  
-  const handleUploadProfilePic = async (file) => {
-    if (!file) {
-      console.error('No file provided to handleUploadProfilePic');
-      return;
-    }
-    
     setIsUploading(true);
+    setUploadProgress(0);
     
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        showToast("error", "Authentication Error", "Please log in again.");
-        setIsUploading(false);
-        return;
-      }
+      const result = await uploadImage(file, (progress) => {
+        setUploadProgress(progress);
+      });
       
-      // สร้าง FormData เพื่อส่งรูปภาพ
-      const formData = new FormData();
-      formData.append('image', file);
-      
-      // อัปโหลดรูปภาพไปยัง Cloudinary ผ่าน API
-      const response = await axios.post(
-        `${API_BASE_URL}/api/upload`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-      
-      console.log('Upload response:', response.data);
-      
-      if (response.data && response.data.imageUrl) {
-        // อัพเดทรูปโปรไฟล์ในฐานข้อมูลทันทีหลังอัปโหลด
-        await updateProfilePic(response.data.imageUrl);
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      // บันทึกลงฐานข้อมูลทันที
+      await updateProfilePic(result.imageUrl);
+      showToast("success", "Success", "Profile picture updated successfully");
       
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      console.error('Error details:', error.response?.data || 'No response data');
-      showToast("error", "Upload Failed", `Failed to upload profile picture: ${error.message}`);
+      console.error('Error uploading image:', error);
+      showToast("error", "Error", error.message || "Failed to upload image");
+      // กลับไปใช้รูปเดิมถ้าอัปโหลดไม่สำเร็จ
+      setProfilePic(currentUser?.profile_pic || null);
     } finally {
       setIsUploading(false);
     }
@@ -141,7 +101,7 @@ function AdminProfile() {
         return;
       }
       
-      // ถูก: เรียกใช้ endpoint ที่ถูกต้อง
+      // เรียกใช้ API อัพเดทรูปโปรไฟล์
       const response = await axios.put(
         `${API_BASE_URL}/api/admin/users/${currentUser.id}`,
         { profile_pic: imageUrl },
@@ -154,14 +114,15 @@ function AdminProfile() {
       );
       
       if (response.data?.user) {
+        // อัพเดต state และ context
         setProfilePic(imageUrl);
         loginUser(response.data.user);
-        showToast("success", "Success", "Profile picture updated successfully.");
+      } else {
+        throw new Error('Invalid response from server');
       }
     } catch (error) {
       console.error('Error updating profile picture:', error);
-      console.error('Error details:', error.response?.data || 'No response data');
-      showToast("error", "Update Failed", error.response?.data?.error || "Failed to update profile picture");
+      throw error;
     }
   };
 
@@ -240,8 +201,11 @@ function AdminProfile() {
       <div className="flex items-center gap-6 mb-12">
         <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex-shrink-0 relative">
           {isUploading && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
               <div className="loader w-6 h-6 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+              {uploadProgress > 0 && (
+                <span className="text-white text-xs mt-1">{uploadProgress}%</span>
+              )}
             </div>
           )}
           {profilePic ? (
