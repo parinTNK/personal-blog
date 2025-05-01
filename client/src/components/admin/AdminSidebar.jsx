@@ -34,6 +34,10 @@ function AdminSidebar({ activeSection, setActiveSection }) {
     navigate('/');
   };
 
+  const handleMenuClick = (sectionId) => {
+    setActiveSection(sectionId);
+  };
+
   return (
     <aside className="w-70 bg-stone-50 border-r border-stone-200 flex flex-col h-screen sticky top-0">
       {/* Header */}
@@ -50,31 +54,31 @@ function AdminSidebar({ activeSection, setActiveSection }) {
           icon={DocumentTextIcon}
           label="Article management"
           isActive={activeSection === 'articles'}
-          onClick={() => setActiveSection('articles')}
+          onClick={() => handleMenuClick('articles')}
         />
         <SidebarItem
           icon={FolderIcon}
           label="Category management"
           isActive={activeSection === 'categories'}
-          onClick={() => setActiveSection('categories')}
+          onClick={() => handleMenuClick('categories')}
         />
         <SidebarItem
           icon={UserCircleIcon}
           label="Profile"
           isActive={activeSection === 'profile'}
-          onClick={() => setActiveSection('profile')}
+          onClick={() => handleMenuClick('profile')}
         />
         <SidebarItem
           icon={BellIcon}
           label="Notification"
           isActive={activeSection === 'notifications'}
-          onClick={() => setActiveSection('notifications')}
+          onClick={() => handleMenuClick('notifications')}
         />
         <SidebarItem
           icon={ArrowPathIcon}
           label="Reset password"
           isActive={activeSection === 'password'}
-          onClick={() => setActiveSection('password')}
+          onClick={() => handleMenuClick('password')}
         />
       </nav>
 

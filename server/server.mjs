@@ -9,11 +9,13 @@ import moment from 'moment-timezone';
 import memberUpdateRoute from './util/routes/memberUpdateRoute.mjs';
 import adminRoutes from './util/routes/adminRoute.mjs'; // Import admin routes
 import categoryRoutes from './util/routes/categoryRoute.mjs';
+import postRouter from './util/routes/postRoute.mjs';
+import userRouter from './util/routes/userRoute.mjs';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV;
 
 const allowedOrigins = [
@@ -47,6 +49,10 @@ if (NODE_ENV === 'development') {
 }
 
 app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
+
+app.use('/uploads', express.static('uploads'));
+
 const prisma = new PrismaClient();
 
 app.get('/', async (req, res) => {
@@ -63,6 +69,8 @@ app.use('/api/auth', authRoute);
 app.use('/api/member', memberUpdateRoute);
 app.use('/api/admin', adminRoutes); // Mount admin routes under /api/admin
 app.use('/api/categories', categoryRoutes);
+app.use('/api', postRouter);
+app.use('/api/user', userRouter);
 
 app.listen(PORT, async  () => {
   await connectToDatabase();

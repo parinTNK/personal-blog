@@ -36,18 +36,22 @@ model likes {
 
 model posts {
   id          Int         @id @default(autoincrement())
-  image       String
-  category_id Int?
+  image       String?
+  category_id Int?        // ใช้ snake_case ตามที่ใช้ในโค้ด
   title       String      @db.VarChar(255)
   description String?
-  date        DateTime?   @default(dbgenerated("CURRENT_DATE")) @db.Timestamp(6)
+  date        DateTime?   @default(now())
   content     String
-  status_id   Int?
+  status_id   Int?        // ใช้ snake_case ตามที่ใช้ในโค้ด
   likes_count Int?        @default(0)
+  author_id   String?     @db.Uuid // ใช้ snake_case ตามที่ใช้ในโค้ด
   comments    comments[]
   likes       likes[]
-  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
-  statuses    statuses?   @relation(fields: [status_id], references: [id], onUpdate: NoAction)
+  
+  // Relations
+  categories  categories? @relation(fields: [category_id], references: [id])
+  statuses    statuses?   @relation(fields: [status_id], references: [id])
+  author      users?      @relation(fields: [author_id], references: [id])
 }
 
 model statuses {
@@ -68,4 +72,5 @@ model users {
   bio         String?    @db.VarChar(120)
   comments    comments[]
   likes       likes[]
+  posts       posts[]    // เพิ่มความสัมพันธ์
 }
