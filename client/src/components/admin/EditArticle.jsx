@@ -38,19 +38,22 @@ function EditArticle({ id, onDone }) {
         }
       });
       
-      const article = response.data.post;
+      // console.log('Article data:', response.data); // เพิ่ม log เพื่อดูโครงสร้างข้อมูลที่ได้รับ
+      
+      // แก้ไขตรงนี้ - ใช้ response.data โดยตรง (ไม่ใช่ response.data.post)
+      const article = response.data;
       
       setFormData({
-        title: article.title,
-        content: article.content,
-        category_id: article.category_id?.toString(),
+        title: article.title || '',
+        content: article.content || '',
+        category_id: article.category_id?.toString() || '',
         image: article.image || '',
         description: article.description || '',
-        status_id: article.status_id,
+        status_id: article.status_id || 2,
       });
       
     } catch (error) {
-      console.error('Error fetching article:', error);
+      console.error('Error fetching article:', error.response?.data || error);
       showToast('error', 'Error', 'Failed to load article');
     }
   };

@@ -117,7 +117,7 @@ function ArticleManagement() {
   
   // ฟังก์ชันดูบทความ
   const handleViewArticle = (slug) => {
-    window.open(`/blog/${slug}`, '_blank');
+    window.open(`/viwe-post/${slug}`, '_blank');
   };
   
   // โหลดบทความเมื่อ component ถูกโหลด

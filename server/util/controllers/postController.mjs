@@ -68,22 +68,25 @@ export const getPostById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const postId = parseInt(id);
-    if (isNaN(postId)) {
-      return res.status(400).json({ error: 'Invalid post ID' });
+    // ตรวจสอบว่า id ถูกส่งมาหรือไม่
+    if (!id) {
+      return res.status(400).json({ error: 'Post ID is required' });
     }
     
+    // ดึงข้อมูลบทความและข้อมูลที่เกี่ยวข้อง
     const post = await prisma.posts.findUnique({
-      where: { id: postId },
+      where: {
+        id: parseInt(id)
+      },
       include: {
         categories: true,
-        statuses: true,
         author: {
           select: {
             id: true,
             name: true,
             username: true,
-            profile_pic: true
+            profile_pic: true,
+            bio: true
           }
         }
       }
@@ -93,10 +96,35 @@ export const getPostById = async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
     
-    res.status(200).json({ post });
+    // สร้างข้อมูลในรูปแบบที่ต้องการส่งกลับ
+    const formattedPost = {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      description: post.description || '',
+      category: post.categories?.name || 'Uncategorized',
+      category_id: post.category_id,
+      image: post.image || null,
+      date: post.date || new Date(),
+      author: post.author ? {
+        id: post.author.id,
+        name: post.author.name || 'Unknown',
+        username: post.author.username || '',
+        profile_pic: post.author.profile_pic || null,
+        bio: post.author.bio || 'No bio available'
+      } : {
+        id: 0,
+        name: 'Unknown',
+        username: '',
+        profile_pic: null,
+        bio: 'No bio available'
+      }
+    };
+    
+    res.json(formattedPost);
   } catch (error) {
-    console.error('Error fetching post:', error);
-    res.status(500).json({ error: 'Failed to fetch post' });
+    console.error('Error fetching post by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch post', details: error.message });
   }
 };
 
@@ -225,5 +253,110 @@ export const uploadImage = async (req, res) => {
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
+  }
+};
+
+export const getPublicPosts = async (req, res) => {
+  try {
+    const { page = 1, limit = 6, category_id, search } = req.query;
+    
+    // แปลงค่าให้เป็นตัวเลข
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+    
+    // สร้างเงื่อนไขสำหรับ query
+    const whereConditions = {
+      status_id: 2, // เฉพาะบทความที่เผยแพร่แล้วเท่านั้น (published)
+    };
+    
+    // กรองตามหมวดหมู่ถ้ามีการระบุ
+    if (category_id && category_id !== 'null') {
+      whereConditions.category_id = parseInt(category_id);
+    }
+    
+    // ค้นหาในชื่อและคำอธิบาย
+    if (search) {
+      whereConditions.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    
+    console.log('Query conditions:', whereConditions);
+    
+    // Query ข้อมูลบทความพร้อมข้อมูลที่เกี่ยวข้อง
+    const posts = await prisma.posts.findMany({
+      where: whereConditions,
+      include: {
+        categories: true, // ข้อมูลหมวดหมู่
+        author: {
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            profile_pic: true,
+          },
+        },
+      },
+      orderBy: {
+        date: 'desc', // เรียงจากใหม่ไปเก่า
+      },
+      skip,
+      take: limitNum,
+    });
+    
+    console.log('Found posts:', posts.length);
+    
+    // นับจำนวนบทความทั้งหมดตามเงื่อนไข
+    const total = await prisma.posts.count({ where: whereConditions });
+    
+    // แปลงข้อมูลก่อนส่งกลับ และตรวจสอบว่า author ไม่เป็น null
+    const formattedPosts = posts.map(post => {
+      // ตรวจสอบว่ามี author หรือไม่
+      let authorData;
+      if (post.author) {
+        authorData = {
+          id: post.author.id,
+          name: post.author.name || 'Unknown',
+          username: post.author.username || '',
+          profile_pic: post.author.profile_pic || null
+        };
+      } else {
+        authorData = {
+          id: 0,
+          name: 'Unknown',
+          username: '',
+          profile_pic: null
+        };
+      }
+      
+      return {
+        id: post.id,
+        title: post.title,
+        description: post.description || '',
+        category: post.categories?.name || 'Uncategorized',
+        category_id: post.category_id,
+        image: post.image || null,
+        date: post.date || new Date(),
+        author: authorData
+      };
+    });
+    
+    // ส่งข้อมูลกลับ
+    res.json({
+      posts: formattedPosts,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum),
+        totalItems: total,
+        itemsPerPage: limitNum
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching public posts:', error);
+    res.status(500).json({ error: 'Failed to fetch posts', details: error.message });
   }
 };
