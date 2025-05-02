@@ -6,6 +6,18 @@ function CardPost({ id, title, description, category, image, author, date }) {
   const name = authorData?.name || 'Unknown Author';
   const username = authorData?.username || '';
   
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', options);
+    } catch (error) {
+      console.error("Invalid date format:", error);
+      return dateString;
+    }
+  };
+  
   return (
     <article className="rounded-xl overflow-hidden border border-gray-200 bg-white">
       <Link to={`/view-post/${id}`}>
@@ -19,10 +31,10 @@ function CardPost({ id, title, description, category, image, author, date }) {
       </Link>
       <div className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="inline-block bg-gray-100 px-3 py-1 text-base rounded-full text-gray-600">
+          <span className="inline-block bg-green-200 px-3 py-1 text-base rounded-full text-green-600">
             {category}
           </span>
-          <span className="text-sm text-gray-500">{date}</span>
+          <span className="text-sm text-gray-500">{formatDate(date)}</span>
         </div>
         <Link to={`/view-post/${id}`}>
           <h3 className="text-xl font-semibold hover:text-gray-600 line-clamp-2">{title}</h3>

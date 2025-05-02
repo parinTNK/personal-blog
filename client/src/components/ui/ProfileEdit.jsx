@@ -1,7 +1,8 @@
 import { useUser } from "@/context/UserContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Toaster, toast } from "react-hot-toast";
+import { Loader2 } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.MODE === "production"
   ? import.meta.env.VITE_API_BASE_URL_PROD
@@ -13,13 +14,84 @@ function ProfileEdit() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [profilePic, setProfilePic] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (currentUser) {
       setUsername(currentUser.username || "");
       setName(currentUser.name || "");
+      setPreviewUrl(currentUser.profile_pic || "");
     }
   }, [currentUser]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // ตรวจสอบประเภทไฟล์ (เฉพาะรูปภาพ)
+    if (!file.type.startsWith('image/')) {
+      showToast("error", "Invalid File", "Please select an image file (JPEG, PNG, etc.)");
+      return;
+    }
+
+    // ตรวจสอบขนาดไฟล์ (ไม่เกิน 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("error", "File Too Large", "Please select an image smaller than 5MB");
+      return;
+    }
+
+    setProfilePic(file);
+    
+    // สร้าง preview URL สำหรับแสดงรูปภาพ
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadClick = () => {
+    // เรียกใช้ input file ที่ซ่อนไว้
+    fileInputRef.current.click();
+  };
+
+  const uploadImage = async (file) => {
+    try {
+      // สร้าง FormData สำหรับอัพโหลดไฟล์
+      const formData = new FormData();
+      formData.append("profileImage", file);
+      
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+      
+      // อัพโหลดรูปภาพไปยัง API - แก้ไขเส้นทาง API ให้ถูกต้อง
+      const response = await axios.post(
+        `${API_BASE_URL}/api/member/upload-profile-pic`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      
+      // หากอัพโหลดเสร็จแล้ว API จะส่งข้อมูลผู้ใช้กลับมาด้วย จึงอัพเดต user ใน context
+      if (response.data.user) {
+        loginUser(response.data.user);
+      }
+      
+      return response.data.imageUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    }
+  };
 
   const showToast = (type, title, description) => {
     const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
@@ -47,31 +119,54 @@ function ProfileEdit() {
     setLoading(true);
     setApiError("");
 
-    if (username === currentUser?.username && name === currentUser?.name) {
+    const noProfileChanges = username === currentUser?.username && name === currentUser?.name && !profilePic;
+    if (noProfileChanges) {
       showToast("error", "Your Profile", "No changes detected.");
       setLoading(false);
       return;
     }
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        showToast("error", "Authentication Required", "Please log in again.");
-        setLoading(false);
-        return;
+      // หากมีการอัพโหลดรูปโปรไฟล์ใหม่
+      if (profilePic) {
+        setUploadLoading(true);
+        try {
+          await uploadImage(profilePic);
+          // หลังจากอัพโหลดรูปโปรไฟล์สำเร็จ ข้อมูลผู้ใช้จะถูกอัพเดตแล้วจาก API
+          // แต่ยังต้องอัพเดต username และ name หากมีการเปลี่ยนแปลง
+          setUploadLoading(false);
+        } catch (uploadError) {
+          showToast("error", "Image Upload Failed", "Failed to upload profile picture.");
+          console.error("Error uploading profile picture:", uploadError);
+          setUploadLoading(false);
+        }
       }
 
-      const dataToUpdate = {};
-      if (name !== currentUser?.name) dataToUpdate.name = name;
-      if (username !== currentUser?.username) dataToUpdate.username = username;
+      // อัพเดตข้อมูล username และ name หากมีการเปลี่ยนแปลง
+      if (username !== currentUser?.username || name !== currentUser?.name) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          showToast("error", "Authentication Required", "Please log in again.");
+          setLoading(false);
+          return;
+        }
 
-      const response = await axios.put(`${API_BASE_URL}/api/member/edit`, dataToUpdate);
+        const dataToUpdate = {};
+        if (name !== currentUser?.name) dataToUpdate.name = name;
+        if (username !== currentUser?.username) dataToUpdate.username = username;
 
-      if (response.data?.user) {
-        showToast("success", "Saved Profile", "Your profile has been successfully updated.");
-        loginUser(response.data.user);
-      } else {
-        throw new Error("Invalid response from server.");
+        const response = await axios.put(`${API_BASE_URL}/api/member/edit`, dataToUpdate, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.data?.user) {
+          showToast("success", "Saved Profile", "Your profile has been successfully updated.");
+          loginUser(response.data.user);
+        } else {
+          throw new Error("Invalid response from server.");
+        }
       }
     } catch (err) {
       const errorMessage = err.response?.data?.error || "Failed to update profile. Please try again.";
@@ -94,23 +189,42 @@ function ProfileEdit() {
   return (
     <form onSubmit={handleSubmit} className="bg-gray-100 p-6 rounded-lg shadow-md flex flex-col gap-8">
       <div className="flex md:flex-row flex-col pb-8 border-b border-gray-300 w-full gap-8 items-center">
-        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
-          {currentUser?.profile_pic ? (
+        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center relative">
+          {previewUrl ? (
             <img
-              src={currentUser.profile_pic}
-              alt={`${currentUser.username || "User"}'s profile`}
+              src={previewUrl}
+              alt={`${currentUser?.username || "User"}'s profile`}
               className="w-full h-full object-cover"
             />
           ) : (
             <span className="text-gray-500 text-sm">No Pic</span>
           )}
+          {uploadLoading && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            </div>
+          )}
         </div>
-        {/* //TODO Update clound photo */}
+        
+        {/* Input file ซ่อน */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+        
+        {/* ปุ่มสำหรับเรียกใช้ Input file */}
         <button
           type="button"
-          className="bg-white border border-gray-400 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-50 text-sm"
+          onClick={handleUploadClick}
+          disabled={uploadLoading}
+          className={`bg-white border border-gray-400 text-gray-700 py-2 px-4 rounded-full hover:bg-gray-50 text-sm ${
+            uploadLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
-          Update profile picture
+          {uploadLoading ? 'Uploading...' : 'Update profile picture'}
         </button>
       </div>
 
@@ -143,9 +257,9 @@ function ProfileEdit() {
         <button
           type="submit"
           className={`bg-black text-white py-2 px-6 rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition duration-150 ease-in-out ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
+            loading || uploadLoading ? "opacity-50 cursor-not-allowed" : ""
           }`}
-          disabled={loading}
+          disabled={loading || uploadLoading}
         >
           {loading ? "Saving..." : "Save"}
         </button>
