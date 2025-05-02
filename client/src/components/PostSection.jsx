@@ -1,44 +1,102 @@
 import React from 'react';
-import ReactMarkdown from 'react-markdown';
 import AuthorCard from '@/components/ui/AuthorCard';
-import InteractionBar from '@/components/ui/InteractionBar';
-import Comments from '@/components/Comments';
+import Comments from '../components/Comments';
+import InteractionBar from '../components/ui/InteractionBar';
+import DOMPurify from 'dompurify';
+import { formatDate } from '../utils/dateFormatter';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+
+const processMarkdown = (content) => {
+  if (!content) return '';
+  return content
+    .replace(/\\n\\n/g, '\n\n')
+    .replace(/\\n/g, '\n');
+};
 
 function PostSection({ data }) {
-  return (
-    <section className='container mx-auto md:pt-8 pb-4'>
-      <div className='items-center justify-center flex md:mt-5 h-70 md:h-150 w-full relative '>
-        <img src={data.image} alt="" className='object-cover absolute w-full h-full md:rounded-3xl' />
-      </div>
-      <main className='flex flex-col md:flex-row mt-5 md:mt-12'>
-        <div className='flex w-full md:w-2/3 flex-col p-4'>
-          <div className='flex gap-4 items-center mb-4'>
-            <span className="text-sm text-green-600 bg-green-100 inline-block py-1 px-4 rounded-full md:text-sm lg:text-base">
-              {data.category}
-            </span>
-            <span className="text-gray-500 text-sm">{data.date}</span>
-          </div>
-          <h2 className="md:text-5xl text-3xl font-bold mb-8">{data.title}</h2>
-          <ReactMarkdown
-            components={{
-              h2: (props) => <h1 className='mb-2 font-semibold text-xl md:text-2xl' {...props} />,
-              p: (props) => <p className='mb-5' {...props} />
-            }}
-          >
-            {data.content}
-          </ReactMarkdown>
-          <div className='flex md:hidden'>
-            <AuthorCard name={data.author} />
-          </div>
+  if (!data) {
+    return <div>No post data available</div>;
+  }
 
-          <InteractionBar />
-          <Comments />
+  const postId = data.id;
+  console.log("PostSection passing ID:", postId);
+
+  const sanitizedContent = data.content ? DOMPurify.sanitize(data.content) : '';
+
+  return (
+    <div className='max-w-7xl mx-auto px-4 py-8'>
+      <div className='mb-10 rounded-xl overflow-hidden w-full'>
+        {data.banner_img || data.image ? (
+          <img
+            src={data.banner_img || data.image}
+            alt={data.title}
+            className='w-full h-[400px] object-cover'
+          />
+        ) : (
+          <div className='h-[400px] bg-gray-200 flex items-center justify-center'>
+            <p className='text-gray-500'>No image available</p>
+          </div>
+        )}
+      </div>
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='flex items-center flex-wrap gap-2'>
+          <span className={`
+            ${data.category ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'} 
+            px-3 py-1 rounded-full text-sm font-medium
+          `}>
+            {data.category?.name || 'Uncategorized'}
+          </span>
+          <span className='text-gray-500 text-sm'>
+            {formatDate(data.created_at) || 'No date available'}
+          </span>
         </div>
-        <div className=' md:w-1/3 p-4 justify-center hidden md:flex'>
-          <AuthorCard name={data.author} />
-        </div>
-      </main>
-    </section>
+      </div>
+
+      <div className='flex flex-col md:flex-row gap-10'>
+        <main className='w-full md:w-2/3'>
+          <h1 className='text-4xl md:text-5xl font-bold mb-8 text-gray-900'>
+            {data.title}
+          </h1>
+          <div className='prose prose-lg max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-p:text-gray-700 mb-10'>
+            {data.content_format === 'markdown' ? (
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]} 
+                rehypePlugins={[rehypeRaw]}
+              >
+                {processMarkdown(data.content)}
+              </ReactMarkdown>
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+            )}
+          </div>
+          {data.tags && data.tags.length > 0 && (
+            <div className='mb-10'>
+              <div className='flex flex-wrap gap-2'>
+                {data.tags.map((tag, index) => (
+                  <span 
+                    key={index} 
+                    className='bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-full text-sm text-gray-700 cursor-pointer'
+                  >
+                    {tag.name || tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <InteractionBar postId={postId} />
+          <div id="comments-section">
+            <Comments postId={postId} />
+          </div>
+        </main>
+        <aside className='w-full md:w-1/3'>
+          <div className='md:sticky md:top-24'>
+            <AuthorCard author={data.author} />
+          </div>
+        </aside>
+      </div>
+    </div>
   );
 }
 
