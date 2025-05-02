@@ -1,40 +1,46 @@
 import React from 'react';
 
+
 function AuthorCard({ author }) {
-  const authorData = typeof author === 'object' ? author : { name: author };
-  const name = authorData?.name || 'Unknown Author';
-  const username = authorData?.username || '';
-  const profilePic = authorData?.profile_pic || null;
-  const bio = authorData?.bio || 'No bio available';
+  // ตรวจสอบว่า author มีค่าหรือไม่
+  if (!author) {
+    return null;
+  }
 
   return (
-    <div className='md:w-3/4 w-full md:h-[500px] h-[300px] bg-gray-50 shadow-sm rounded-lg p-6 md:sticky md:top-10'>
-      <div className='flex items-center mb-4'>
-        {profilePic ? (
+    <div className="bg-gray-50 rounded-lg p-6 shadow-sm">
+      <div className="mb-3">
+        <span className="text-gray-500 text-sm">Author</span>
+      </div>
+      
+      <div className="flex items-center mb-4">
+        {author.profile_pic ? (
           <img
-            src={profilePic}
-            alt={name}
-            className="h-12 w-12 object-cover rounded-full shadow-lg mr-4"
+            src={author.profile_pic}
+            alt={author.name}
+            className="h-14 w-14 object-cover rounded-full mr-3"
           />
         ) : (
-          <div className="h-12 w-12 bg-gray-300 rounded-full flex items-center justify-center mr-4 shadow-lg">
-            <span className="text-xl text-gray-600 font-semibold">
-              {name.charAt(0).toUpperCase()}
+          <div className="h-14 w-14 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+            <span className="text-xl font-semibold text-gray-600">
+              {author.name ? author.name.charAt(0).toUpperCase() : 'A'}
             </span>
           </div>
         )}
-
+        
         <div>
-          <h3 className='text-gray-700 text-sm'>Author</h3>
-          <h3 className='text-lg font-semibold'>{name}</h3>
-          {username && <p className='text-sm text-gray-500'>@{username}</p>}
+          <h3 className="text-xl font-semibold">{author.name}</h3>
+          {author.username && <p className="text-sm text-gray-500">@{author.username}</p>}
         </div>
       </div>
-      <hr />
-
-      <div className='mt-4'>
-        <p className='text-gray-700 text-xl'>{bio}</p>
+      
+      <div className="mt-4">
+        <p className="text-gray-600 text-sm leading-relaxed">
+          {author.bio || "No bio available for this author."}
+        </p>
       </div>
+      
+    
     </div>
   );
 }
