@@ -9,6 +9,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   UserIcon,
+  ChartBarIcon, 
 } from '@heroicons/react/24/outline';
 
 function Navbar() {
@@ -19,6 +20,9 @@ function Navbar() {
     await logoutUser();
     navigate('/');
   };
+
+
+  const isAdmin = currentUser?.role === 'admin';
 
   const renderProfilePic = (sizeClass = "h-8 w-8") => {
     if (currentUser?.profile_pic) {
@@ -60,30 +64,43 @@ function Navbar() {
               </PopoverTrigger>
               <PopoverContent className="w-56 mt-2 mr-4 md:mr-0 p-1">
                 <div className="flex flex-col">
-                   <Link
-                     to="/member-management"
-                     state={{ defaultTab: 'profile' }}
-                     className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                   >
-                     <UserCircleIcon className="h-5 w-5 text-gray-500" />
-                     Profile
-                   </Link>
-                   <Link
-                     to="/member-management"
-                     state={{ defaultTab: 'password' }}
-                     className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                   >
-                     <ArrowPathIcon className="h-5 w-5 text-gray-500" />
-                     Reset password
-                   </Link>
-                   <hr className="my-1 border-gray-200" />
-                   <button
-                     onClick={handleLogout}
-                     className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-gray-100 rounded-md w-full text-left"
-                   >
-                     <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-500" />
-                     Log out
-                   </button>
+                  {isAdmin ? (
+                    <Link
+                      to="/admin"
+                      className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                    >
+                      <ChartBarIcon className="h-5 w-5 text-gray-500" />
+                      Admin Dashboard
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/member-management"
+                      state={{ defaultTab: 'profile' }}
+                      className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                    >
+                      <UserCircleIcon className="h-5 w-5 text-gray-500" />
+                      Profile
+                    </Link>
+                  )}
+                  
+                  <Link
+                    to="/member-management"
+                    state={{ defaultTab: 'password' }}
+                    className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    <ArrowPathIcon className="h-5 w-5 text-gray-500" />
+                    Reset password
+                  </Link>
+                  
+                  <hr className="my-1 border-gray-200" />
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-gray-100 rounded-md w-full text-left"
+                  >
+                    <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-500" />
+                    Log out
+                  </button>
                 </div>
               </PopoverContent>
             </Popover>
