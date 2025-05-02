@@ -30,15 +30,6 @@ A full-featured blogging platform for writers and readers. Users can explore art
 
 ---
 
-## ❌ Features Not Implemented Yet
-
-- 🔔 **As a member**, I should be able to get notifications of new articles and comments.
-- 🔔 **As an admin**, when a member likes or comments on one of my articles, I should be able to get fresh notifications.
-
-These are marked as `Could Have` in the project scope.
-
----
-
 ## 🛠 Tech Stack
 
 - **Frontend**: React.js, Tailwind CSS
