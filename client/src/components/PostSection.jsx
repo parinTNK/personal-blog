@@ -46,10 +46,10 @@ function PostSection({ data }) {
             ${data.category ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'} 
             px-3 py-1 rounded-full text-sm font-medium
           `}>
-            {data.category?.name || 'Uncategorized'}
+            {data.category || 'Uncategorized'}
           </span>
           <span className='text-gray-500 text-sm'>
-            {formatDate(data.created_at) || 'No date available'}
+            {formatDate(data.date) || 'No date available'}
           </span>
         </div>
       </div>
