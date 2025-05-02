@@ -25,17 +25,7 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // console.log('Request Origin:', origin);
-    // console.log('Allowed CLIENT_URL:', process.env.CLIENT_URL);
-    // console.log('Is Origin Allowed?', !origin || allowedOrigins.includes(origin));
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-     
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*',
   credentials: true
 }));
 
