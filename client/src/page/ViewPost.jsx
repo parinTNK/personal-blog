@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
-import PostSection from '@/components/PostSection';
 import Footer from '@/components/Footer';
+import PostSection from '@/components/PostSection';
 import { Loader2 } from 'lucide-react';
 
 // ใช้ API_BASE_URL จาก environment variables
@@ -20,23 +20,40 @@ function ViewPost() {
 
     useEffect(() => {
         const fetchPost = async () => {
+            setLoading(true);
             try {
-                setLoading(true);
-                console.log('Fetching post with ID:', id);
-                
-                // เรียกใช้ API จาก backend
+                console.log("Fetching post with ID:", id);
                 const response = await axios.get(`${API_BASE_URL}/api/posts/${id}`);
-                console.log('Post data received:', response.data);
+                console.log("Post data received:", response.data);
                 
-                // เก็บข้อมูลใน state
-                setData(response.data);
-                setError(null);
-            } catch (error) {
-                console.error("Error fetching blog post:", error.response?.data || error.message);
-                setError("Failed to load blog post. Please try again later.");
-            } finally {
+                // ตรวจสอบรูปแบบเนื้อหา
+                const postData = response.data;
+                
+                // ถ้าไม่มีการระบุรูปแบบเนื้อหา ให้ตรวจสอบว่าเป็น markdown หรือไม่
+                if (!postData.content_format && postData.content) {
+                  // ตรวจสอบว่าเนื้อหามีรูปแบบเป็น markdown หรือไม่
+                  const markdownIndicators = [
+                    '##', '**', '__', '```', '>', '[', '![', '- ', '1. ', '|', '\n\n'
+                  ];
+                  
+                  const couldBeMarkdown = markdownIndicators.some(indicator => 
+                    postData.content.includes(indicator)
+                  );
+                  
+                  if (couldBeMarkdown) {
+                    postData.content_format = 'markdown';
+                  } else {
+                    postData.content_format = 'html';
+                  }
+                }
+                
+                setData(postData);
+              } catch (error) {
+                console.error('Error fetching post:', error);
+                setError('Failed to load the article. Please try again later.');
+              } finally {
                 setLoading(false);
-            }
+              }
         };
 
         if (id) {
@@ -48,7 +65,7 @@ function ViewPost() {
     }, [id]);
 
     const handleGoBack = () => {
-        navigate('/');
+        navigate('/blog');
     };
 
     if (loading) {
@@ -56,10 +73,7 @@ function ViewPost() {
             <>
                 <Navbar />
                 <div className="container mx-auto min-h-[60vh] flex items-center justify-center">
-                    <div className="flex flex-col items-center">
-                        <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
-                        <p className="mt-4 text-gray-600">Loading article...</p>
-                    </div>
+                    <Loader2 className="h-12 w-12 text-gray-500 animate-spin" />
                 </div>
                 <Footer />
             </>
@@ -94,7 +108,7 @@ function ViewPost() {
     return (
         <>
             <Navbar />
-            <div className="container mx-auto">
+            <div className="bg-gray-50 min-h-screen py-8">
                 <PostSection data={data} />
             </div>
             <Footer />
