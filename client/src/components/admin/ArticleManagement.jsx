@@ -17,13 +17,12 @@ function ArticleManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
+
   
-  // ลบ const [searchParams] = useSearchParams(); เพราะไม่ได้ใช้งาน
-  
-  // ใช้ useRef สำหรับเก็บ timeout ID เพื่อทำ debounce
+ 
   const searchTimeout = useRef(null);
   
-  // ฟังก์ชันแสดง toast notification
+
   const showToast = (type, title, message) => {
     const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
     
@@ -43,7 +42,7 @@ function ArticleManagement() {
     ), { position: 'bottom-right' });
   };
   
-  // ฟังก์ชันค้นหาแบบ debounced
+
   const debouncedSearch = useCallback((value) => {
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
@@ -62,7 +61,7 @@ function ArticleManagement() {
     }, 300);
   }, [articles]);
   
-  // ฟังก์ชัน handle การพิมพ์ค้นหา
+
   const handleSearchChange = (e) => {
     const value = e.target.value;
     
@@ -79,17 +78,17 @@ function ArticleManagement() {
     debouncedSearch(value);
   };
   
-  // ฟังก์ชันนำทางไปหน้าสร้างบทความ (ใช้ query params แทนการเปลี่ยนเส้นทาง)
+
   const handleCreateArticle = () => {
     navigate('/admin?section=articles&action=create');
   };
   
-  // ฟังก์ชันนำทางไปหน้าแก้ไขบทความ (ใช้ query params แทนการเปลี่ยนเส้นทาง)
+
   const handleEditArticle = (id) => {
     navigate(`/admin?section=articles&action=edit&articleId=${id}`);
   };
   
-  // ฟังก์ชันลบบทความ
+ 
   const handleDeleteArticle = async (id) => {
     if (!window.confirm('Are you sure you want to delete this article?')) {
       return;
@@ -103,7 +102,7 @@ function ArticleManagement() {
         }
       });
       
-      // อัปเดต state เพื่อลบบทความออกจากรายการ
+   
       const updatedArticles = articles.filter(article => article.id !== id);
       setArticles(updatedArticles);
       setFilteredArticles(updatedArticles);
@@ -115,12 +114,12 @@ function ArticleManagement() {
     }
   };
   
-  // ฟังก์ชันดูบทความ
+  
   const handleViewArticle = (slug) => {
-    window.open(`/viwe-post/${slug}`, '_blank');
+    window.open(`/view-post/${slug}`, '_blank');
   };
   
-  // โหลดบทความเมื่อ component ถูกโหลด
+
   useEffect(() => {
     const fetchArticles = async () => {
       setIsLoading(true);
@@ -144,7 +143,6 @@ function ArticleManagement() {
     
     fetchArticles();
     
-    // ล้าง timeout เมื่อ component unmount
     return () => {
       if (searchTimeout.current) {
         clearTimeout(searchTimeout.current);
@@ -152,11 +150,10 @@ function ArticleManagement() {
     };
   }, []);
   
-  // ฟังก์ชันแสดงสถานะด้วยสี
+ 
   const renderStatus = (value) => {
-    // console.log("Status value:", value, typeof value);
-    
-    // ถ้าเป็น string เช่น "publish" หรือ "draft"
+
+  
     if (typeof value === 'string') {
       if (value === 'publish') {
         return (
@@ -173,7 +170,6 @@ function ArticleManagement() {
       }
     }
     
-    // ถ้าเป็น number เช่น 1 หรือ 2
     if (typeof value === 'number') {
       if (value === 2) {
         return (
@@ -190,7 +186,7 @@ function ArticleManagement() {
       }
     }
     
-    // ถ้าไม่ใช่ทั้ง string และ number
+
     return (
       <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
         Draft
@@ -202,7 +198,7 @@ function ArticleManagement() {
     <div className="flex-1 p-8 md:p-12 bg-stone-50 relative min-h-screen">
       <Toaster position="bottom-right" reverseOrder={false} />
       
-      {/* Header with Create button */}
+  
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-2xl font-semibold text-gray-900">Article management</h1>
         <Button
@@ -214,7 +210,7 @@ function ArticleManagement() {
         </Button>
       </div>
       
-      {/* Search bar */}
+
       <div className="mb-8">
         <div className="relative max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -240,9 +236,7 @@ function ArticleManagement() {
         )}
       </div>
       
-      {/* Articles list */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {/* Header */}
         <div className="grid grid-cols-12 gap-4 border-b px-6 py-4">
           <div className="col-span-5 text-sm font-medium text-gray-500">Article title</div>
           <div className="col-span-2 text-sm font-medium text-gray-500">Category</div>
@@ -250,22 +244,21 @@ function ArticleManagement() {
           <div className="col-span-3 text-sm font-medium text-gray-500 text-right">Actions</div>
         </div>
         
-        {/* Loading state */}
+
         {isLoading && (
           <div className="p-8 text-center text-gray-500">
             <div className="inline-block h-6 w-6 border-2 border-t-transparent border-gray-500 rounded-full animate-spin mr-2"></div>
             Loading articles...
           </div>
         )}
-        
-        {/* Empty state */}
+
         {!isLoading && filteredArticles.length === 0 && (
           <div className="p-8 text-center text-gray-500">
             {searchTerm ? 'No articles found matching your search' : 'No articles yet'}
           </div>
         )}
         
-        {/* Articles */}
+
         <div className="divide-y">
           {filteredArticles.map(article => (
             <div key={article.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
