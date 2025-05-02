@@ -51,9 +51,9 @@ These are marked as `Could Have` in the project scope.
 
 ## 📂 Project Structure
 
-/client → Frontend (React)
-/server → Backend (Node.js, Express)
-/prisma → Database schema and neon database
+- client → Frontend (React)
+- server → Backend (Node.js, Express)
+- prisma → Database schema and neon database
 
 ## 👨‍💻 Author
 
